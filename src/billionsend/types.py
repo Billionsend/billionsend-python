@@ -860,6 +860,8 @@ class RemoveTopicResponse(TypedDict):
 
 
 class CreateDomainRequestCapabilities(TypedDict):
+    """What the domain is used for (sending, receiving); omitted fields keep their value."""
+
     sending: NotRequired[Literal["enabled", "disabled"]]
     receiving: NotRequired[Literal["enabled", "disabled"]]
 
@@ -1058,6 +1060,8 @@ class UpdateDomainRequestUnsubscribePage(TypedDict):
 
 
 class UpdateDomainRequestCapabilities(TypedDict):
+    """What the domain is used for (sending, receiving); omitted fields keep their value."""
+
     sending: NotRequired[Literal["enabled", "disabled"]]
     receiving: NotRequired[Literal["enabled", "disabled"]]
 

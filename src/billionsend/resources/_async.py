@@ -671,6 +671,11 @@ class AsyncContactsBatchResource:
     ) -> BatchRemoveContactsResponse:
         """Delete in bulk.
 
+        Deletes up to 1000 contacts by id or by email address in one request and lists
+        the rows actually deleted; unknown ids or addresses are skipped. Emails stay in
+        the log; `erase: true` also scrubs each address from email history, event
+        payloads and API logs, like DELETE /contacts/{id}?erase=true.
+
         ``POST /contacts/batch/remove``
         """
         response = await self._client.request(
@@ -692,6 +697,16 @@ class AsyncContactsBatchResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> BatchContactsResponse:
         """Create in bulk.
+
+        Creates up to 1000 contacts in one request. Each item is a CreateContactRequest.
+        `on_conflict` decides what happens to an email that already belongs to a contact
+        — `error` (default), `skip`, or `upsert`. An upsert updates
+        `first_name`/`last_name` only when provided, merges `properties` (provided keys
+        overwrite), adds `segments` and upserts `topics`. `unsubscribed: true` opts the
+        contact out; `unsubscribed: false` on an already unsubscribed contact is ignored
+        — a batch never re-subscribes anyone, that stays an explicit PATCH
+        /contacts/{id}. The `x-batch-validation` header picks strict (default, all-or-
+        nothing) or permissive (valid subset written, failures listed in `errors`).
 
         ``POST /contacts/batch``
         """
@@ -894,6 +909,17 @@ class AsyncEmailsReceivingResource:
     ) -> ListReceivedEmailsResponse:
         """List received emails.
 
+        Mail received at the team's receiving domains and inboxes, newest first (`after`
+        pages toward older mail), with cursor pagination. Needs a full access key; a
+        domain-scoped key lists mail addressed to its domain only, an inbox-scoped key
+        mail delivered into its inbox. Mail held for screening or in quarantine is left
+        out unless a full access key asks for it (include_quarantined, quarantined).
+        With wait, the request is held until matching mail arrives (long-poll). An
+        inbox_id the key can't reach answers 404 at once, without waiting; an inbox-
+        scoped key naming another inbox gets 403 restricted_api_key. Everything in a
+        received email was written by whoever sent it, so its HTML is safe to show only
+        in a sandbox.
+
         ``GET /emails/receiving``
         """
         response = await self._client.request(
@@ -1034,6 +1060,9 @@ class AsyncInboxesAgentResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> InboxAgent:
         """Get agent settings.
+
+        Hosted-agent settings. BillionSend runs no agent of its own, so an inbox never
+        has one.
 
         ``GET /inboxes/{inbox_id}/agent``
         """
@@ -1926,6 +1955,10 @@ class AsyncSegmentsContactsResource:
     ) -> ListContactsResponse:
         """List segment contacts.
 
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
+
         ``GET /segments/{id}/contacts``
         """
         response = await self._client.request(
@@ -2137,6 +2170,11 @@ class AsyncApiKeysResource:
     ) -> ListApiKeysResponse:
         """List API keys.
 
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones. A key held to one domain lists only the keys held to that same
+        domain.
+
         ``GET /api-keys``
         """
         response = await self._client.request(
@@ -2244,6 +2282,10 @@ class AsyncBroadcastsResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> ListBroadcastsResponse:
         """List broadcasts.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
 
         ``GET /broadcasts``
         """
@@ -2445,6 +2487,10 @@ class AsyncContactPropertiesResource:
     ) -> ListContactPropertiesResponse:
         """List properties.
 
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
+
         ``GET /contact-properties``
         """
         response = await self._client.request(
@@ -2585,6 +2631,10 @@ class AsyncContactsResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> ListContactsResponse:
         """List contacts.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
 
         ``GET /contacts``
         """
@@ -2781,6 +2831,11 @@ class AsyncDomainsResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> ListDomainsResponse:
         """List domains.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones. The team's subdomain of the shared domain, when it has one, is the
+        last row (`shared: true`).
 
         ``GET /domains``
         """
@@ -3008,6 +3063,10 @@ class AsyncEmailsResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> ListEmailsResponse:
         """List emails.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
 
         ``GET /emails``
         """
@@ -3355,6 +3414,14 @@ class AsyncInboxesResource:
     ) -> InboxSentEmail | InboxDraft:
         """Send an email from an inbox.
 
+        Sends a new conversation from the inbox address in one call (`to`, `subject`,
+        `html` and/or `text`, optional `cc`, `bcc` and `attachments` as POST /emails
+        takes them). It runs the same rules as a reply: an inbox that may not start
+        conversations, a first-time recipient past the ramp, or `requires_approval:
+        true` keeps it as a draft for a person to approve and the answer is 202 with the
+        Draft. Accepts an `Idempotency-Key`. An inbox on the shared domain takes no
+        attachments.
+
         Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
         up for this call, so that its retries never send twice.
 
@@ -3409,6 +3476,10 @@ class AsyncSegmentsResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> ListSegmentsResponse:
         """List segments.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
 
         ``GET /segments``
         """
@@ -3549,6 +3620,10 @@ class AsyncSuppressionsResource:
     ) -> ListSuppressionsResponse:
         """List suppressions.
 
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
+
         ``GET /suppressions``
         """
         response = await self._client.request(
@@ -3666,6 +3741,10 @@ class AsyncTemplatesResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> ListTemplatesResponse:
         """List templates.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
 
         ``GET /templates``
         """
@@ -3927,6 +4006,10 @@ class AsyncUnsubscribesResource:
     ) -> ListUnsubscribesResponse:
         """List unsubscribes.
 
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
+
         ``GET /unsubscribes``
         """
         response = await self._client.request(
@@ -4117,6 +4200,10 @@ class AsyncVerificationsResource:
     ) -> ListVerificationsResponse:
         """List verifications.
 
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
+
         ``GET /verifications``
         """
         response = await self._client.request(
@@ -4213,6 +4300,10 @@ class AsyncWebhooksResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> ListWebhooksResponse:
         """List webhooks.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
 
         ``GET /webhooks``
         """
