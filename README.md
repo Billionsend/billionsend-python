@@ -138,6 +138,7 @@ Verify a delivery before trusting it. Pass the raw body exactly as received, the
 ```python
 from billionsend import WebhookVerificationError, verify_webhook
 
+
 # Flask; any framework works the same way
 @app.post("/webhooks/billionsend")
 def billionsend_webhook():
