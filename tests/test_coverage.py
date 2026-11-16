@@ -46,6 +46,9 @@ CALLS: dict[tuple[str, str], Call] = {
     ("GET", "/emails/receiving/{email_id}/attachments/{id}"): lambda c, b: (
         c.emails.receiving.attachments.get(ID, ID2)
     ),
+    ("GET", "/emails/receiving/{email_id}/attachments/{id}/text"): lambda c, b: (
+        c.emails.receiving.attachments.text(ID, ID2)
+    ),
     # Domains
     ("POST", "/domains"): lambda c, b: c.domains.create(b),
     ("GET", "/domains"): lambda c, b: c.domains.list(),
@@ -246,7 +249,7 @@ def body_for(key: tuple[str, str]) -> Any:
 
 
 def test_table_matches_the_contract() -> None:
-    assert len(OPERATION_KEYS) == 135
+    assert len(OPERATION_KEYS) == 136
     assert set(CALLS) == OPERATION_KEYS
 
 
@@ -329,7 +332,7 @@ def test_sync_and_async_have_the_same_surface() -> None:
         async_methods |= _public_methods(getattr(async_, name), name)
     assert sync_methods == async_methods
     operations = {m for m in sync_methods if not m.endswith("_all")}
-    assert len(operations) == len(OPERATION_KEYS) == 135
+    assert len(operations) == len(OPERATION_KEYS) == 136
 
 
 def test_idempotency_key_where_the_contract_declares_it() -> None:

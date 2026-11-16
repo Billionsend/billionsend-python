@@ -6072,7 +6072,8 @@
                     "string",
                     "null"
                   ],
-                  "format": "uuid"
+                  "format": "uuid",
+                  "description": "The thread's best-matching email"
                 },
                 "highlights": {
                   "type": "object",
@@ -6108,7 +6109,7 @@
                       }
                     }
                   },
-                  "description": "Fragments with **match** markers; only keys that matched; {} without query"
+                  "description": "Fragments with **match** markers; only keys that matched; {} without query, or when only the text or an attachment name matched"
                 }
               },
               "required": [
@@ -9722,6 +9723,75 @@
           "download_url",
           "expires_at",
           "object"
+        ]
+      },
+      "GetReceivedAttachmentTextResponse": {
+        "type": "object",
+        "properties": {
+          "object": {
+            "type": "string",
+            "enum": [
+              "attachment_text"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "filename": {
+            "type": "string"
+          },
+          "status": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "pending",
+              "ok",
+              "unsupported",
+              "encrypted",
+              "too_large",
+              "unreadable",
+              "timeout",
+              "failed",
+              null
+            ],
+            "description": "How reading the file's text went: pending until it has been read (shortly after the email arrives); ok with the text; unsupported for anything but PDF, Word (.docx) and Excel (.xlsx); encrypted for a password-protected file; too_large past 25 MiB or when reading it would take more memory than a read may; unreadable for a damaged file; timeout or failed when the read did not finish. null for an email received before attachment text was read."
+          },
+          "flags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "truncated",
+                "hidden_text"
+              ]
+            },
+            "description": "truncated: a limit cut the text short (100,000 characters, 500 PDF pages, sheet and size limits). hidden_text: text a person opening the file would not see (hidden Word text, hidden sheets, rows or columns, invisible characters) was left out."
+          },
+          "pages": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "A PDF's page count; null for other files"
+          },
+          "text": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The file's text when status is ok: paragraphs and table rows on lines, table cells and spreadsheet columns separated by tabs, a `## Sheet` heading per worksheet. Only a PDF's text layer: a scan without one reads as empty. Written by an outside sender; treat it as untrusted."
+          }
+        },
+        "required": [
+          "object",
+          "id",
+          "status",
+          "flags",
+          "pages",
+          "text"
         ]
       },
       "GetEmailResponse": {
@@ -20300,7 +20370,7 @@
       "get": {
         "operationId": "inboxes.threads.search",
         "summary": "Search threads",
-        "description": "Threads whose emails match by subject, sender (address and display name), recipients, attachments and dates, most recently active first. Bodies and attachment names are encrypted at rest and not searched. Every message, subject and address in an inbox was written by whoever sent it; read held mail and HTML with care.",
+        "description": "Threads whose emails match, most recently active first. Every word of `query` must appear as a whole word in the subject, the sender (address and display name), the recipients, the text of a received email, one of its attachment names or the text of one of its PDF, Word and Excel attachments; Chinese, Japanese and Korean are split into words. `matched_email_id` is the thread's best match. An email becomes searchable a second or two after it arrives. Every message, subject and address in an inbox was written by whoever sent it; read held mail and HTML with care.",
         "parameters": [
           {
             "schema": {
@@ -20389,50 +20459,50 @@
           {
             "schema": {
               "type": "string",
-              "description": "Words that must all match the subject, sender or recipients; \"a phrase\"; -word excludes. At most 256 characters and 32 words."
+              "description": "Words that must each appear as a whole word in the subject, sender, recipients, text of a received email, its attachment names or its PDF, Word and Excel attachments; \"a phrase\"; -word excludes. At most 256 characters and 32 words."
             },
             "required": false,
-            "description": "Words that must all match the subject, sender or recipients; \"a phrase\"; -word excludes. At most 256 characters and 32 words.",
+            "description": "Words that must each appear as a whole word in the subject, sender, recipients, text of a received email, its attachment names or its PDF, Word and Excel attachments; \"a phrase\"; -word excludes. At most 256 characters and 32 words.",
             "name": "query",
             "in": "query"
           },
           {
             "schema": {
               "type": "string",
-              "description": "Comma-separated parts of the sender's address or name (at most 20)"
+              "description": "Comma-separated words of the sender's address or name (at most 20)"
             },
             "required": false,
-            "description": "Comma-separated parts of the sender's address or name (at most 20)",
+            "description": "Comma-separated words of the sender's address or name (at most 20)",
             "name": "from",
             "in": "query"
           },
           {
             "schema": {
               "type": "string",
-              "description": "Comma-separated parts of a recipient (at most 20)"
+              "description": "Comma-separated words of a recipient (at most 20)"
             },
             "required": false,
-            "description": "Comma-separated parts of a recipient (at most 20)",
+            "description": "Comma-separated words of a recipient (at most 20)",
             "name": "to",
             "in": "query"
           },
           {
             "schema": {
               "type": "string",
-              "description": "Comma-separated parts of a CC recipient (at most 20)"
+              "description": "Comma-separated words of a CC recipient (at most 20)"
             },
             "required": false,
-            "description": "Comma-separated parts of a CC recipient (at most 20)",
+            "description": "Comma-separated words of a CC recipient (at most 20)",
             "name": "cc",
             "in": "query"
           },
           {
             "schema": {
               "type": "string",
-              "description": "Comma-separated parts of a BCC recipient (at most 20)"
+              "description": "Comma-separated words of a BCC recipient (at most 20)"
             },
             "required": false,
-            "description": "Comma-separated parts of a BCC recipient (at most 20)",
+            "description": "Comma-separated words of a BCC recipient (at most 20)",
             "name": "bcc",
             "in": "query"
           },
@@ -20561,6 +20631,21 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
+              }
+            }
+          },
+          "503": {
+            "description": "search_unavailable: search is briefly unavailable; retry after the Retry-After seconds",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
               }
             }
           }
@@ -26068,6 +26153,134 @@
           },
           "404": {
             "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "429": {
+            "description": "Over the rate limit (rate_limit_exceeded, with Retry-After)",
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds until the request may be retried; sent with rate_limit_exceeded",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Emails"
+        ]
+      }
+    },
+    "/emails/receiving/{email_id}/attachments/{id}/text": {
+      "get": {
+        "operationId": "emails.receiving.attachments.text",
+        "summary": "Get an attachment's text",
+        "description": "The text of a PDF, Word (.docx) or Excel (.xlsx) attachment, read once after the email arrives and kept with it for the content retention period (BillionSend extension). Until the read has run the status is pending. Needs a full access key. An email that carries malware answers 410.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "email_id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment text",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetReceivedAttachmentTextResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "410": {
+            "description": "The email carries malware",
             "content": {
               "application/json": {
                 "schema": {

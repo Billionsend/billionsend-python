@@ -68,6 +68,7 @@ from ..types import (
     GetDomainResponse,
     GetEmailResponse,
     GetReceivedAttachmentResponse,
+    GetReceivedAttachmentTextResponse,
     GetReceivedEmailResponse,
     GetSegmentResponse,
     GetSuppressionResponse,
@@ -275,6 +276,31 @@ class EmailsReceivingAttachmentsResource:
             timeout=timeout,
         )
         return cast("GetReceivedAttachmentResponse", response)
+
+    def text(
+        self,
+        email_id: str,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> GetReceivedAttachmentTextResponse:
+        """Get an attachment's text.
+
+        The text of a PDF, Word (.docx) or Excel (.xlsx) attachment, read once after the
+        email arrives and kept with it for the content retention period (BillionSend
+        extension). Until the read has run the status is pending. Needs a full access
+        key. An email that carries malware answers 410.
+
+        ``GET /emails/receiving/{email_id}/attachments/{id}/text``
+        """
+        response = self._client.request(
+            "GET",
+            f"/emails/receiving/{encode_path(email_id)}/attachments/{encode_path(id)}/text",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("GetReceivedAttachmentTextResponse", response)
 
 
 class InboxesThreadsEmailsResource:
@@ -1693,11 +1719,14 @@ class InboxesThreadsResource:
     ) -> SearchInboxThreadsResponse:
         """Search threads.
 
-        Threads whose emails match by subject, sender (address and display name),
-        recipients, attachments and dates, most recently active first. Bodies and
-        attachment names are encrypted at rest and not searched. Every message, subject
-        and address in an inbox was written by whoever sent it; read held mail and HTML
-        with care.
+        Threads whose emails match, most recently active first. Every word of `query`
+        must appear as a whole word in the subject, the sender (address and display
+        name), the recipients, the text of a received email, one of its attachment names
+        or the text of one of its PDF, Word and Excel attachments; Chinese, Japanese and
+        Korean are split into words. `matched_email_id` is the thread's best match. An
+        email becomes searchable a second or two after it arrives. Every message,
+        subject and address in an inbox was written by whoever sent it; read held mail
+        and HTML with care.
 
         ``GET /inboxes/{inbox_id}/threads/search``
         """

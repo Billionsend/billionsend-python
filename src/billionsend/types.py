@@ -96,6 +96,7 @@ __all__ = [
     "GetDomainResponseUnsubscribePage",
     "GetEmailResponse",
     "GetReceivedAttachmentResponse",
+    "GetReceivedAttachmentTextResponse",
     "GetReceivedEmailResponse",
     "GetReceivedEmailResponseAttachmentsItem",
     "GetReceivedEmailResponseAuthentication",
@@ -1752,7 +1753,8 @@ class SearchInboxThreadsResponseDataItemLabelsItem(TypedDict):
     color: str
 
 
-# Fragments with **match** markers; only keys that matched; {} without query
+# Fragments with **match** markers; only keys that matched; {} without query, or when only the
+# text or an attachment name matched
 SearchInboxThreadsResponseDataItemHighlights = TypedDict(
     "SearchInboxThreadsResponseDataItemHighlights",
     {
@@ -2675,6 +2677,28 @@ class GetReceivedAttachmentResponse(TypedDict):
     download_url: str
     expires_at: str
     object: Literal["attachment"]
+
+
+class GetReceivedAttachmentTextResponse(TypedDict):
+    object: Literal["attachment_text"]
+    id: str
+    filename: NotRequired[str]
+    status: (
+        Literal[
+            "pending",
+            "ok",
+            "unsupported",
+            "encrypted",
+            "too_large",
+            "unreadable",
+            "timeout",
+            "failed",
+        ]
+        | None
+    )
+    flags: list[Literal["truncated", "hidden_text"]]
+    pages: int | None
+    text: str | None
 
 
 class EmailInsightsResponseChecksItem(TypedDict):
