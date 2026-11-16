@@ -264,6 +264,16 @@ uv run pytest
 
 Whatever fails is what the SDK has to follow. CI runs `scripts/generate.py --check` so the generated code never drifts from the snapshot.
 
+## Releasing
+
+Publishing is manual; nothing is published on push.
+
+1. On PyPI, the owner of the `billionsend` project adds a Trusted Publisher (for the first version, a "pending publisher" under Account → Publishing): owner `billionsend`, repository `billionsend-python`, workflow `release.yml`, environment `pypi`.
+2. Set `version` in `pyproject.toml`, turn the changelog's `Unreleased` heading into that version, commit, then tag and push: `git tag v0.1.0 && git push origin main v0.1.0`.
+3. Actions → `release` → Run workflow, on the version tag. The workflow refuses a branch or a tag that differs from `pyproject.toml`, runs every check, builds the sdist and wheel, and uploads them with PyPI Trusted Publishing (no token stored).
+
+Without Trusted Publishing, the same release from a clean checkout of the tag is `uv build && uv publish` with an API token scoped to the `billionsend` project in `UV_PUBLISH_TOKEN`.
+
 ## License
 
 MIT
