@@ -173,6 +173,8 @@ def example(schema: Mapping[str, Any] | None, *, full: bool = True) -> Any:
     if schema is None:
         return {}
     s = resolve(schema)
+    if len(s.get("allOf", [])) == 1:
+        return example(s["allOf"][0], full=full)
     if not ({"type", "enum", "anyOf", "oneOf", "properties"} & set(s)):
         return {}  # an unconstrained schema: any JSON value is valid
     if "anyOf" in s or "oneOf" in s:
@@ -336,7 +338,7 @@ class ContractMock:
             if name not in query:
                 assert not p.get("required"), f"{where}: required query parameter {name} missing"
                 continue
-            validate(_coerce(query[name], p["schema"]), p["schema"], f"{where} query {name}")
+            validate(_coerce(query[name], p), p["schema"], f"{where} query {name}")
 
         # Header parameters
         for p in op.params("header"):
@@ -393,11 +395,15 @@ class ContractMock:
         return httpx.Response(status, json=instance)
 
 
-def _coerce(values: list[str], schema: Mapping[str, Any]) -> Any:
-    s = resolve(schema)
+def _coerce(values: list[str], param: Mapping[str, Any]) -> Any:
+    s = resolve(param["schema"])
     types = s.get("type")
     types = types if isinstance(types, list) else [types]
     if "array" in types:
+        # A list without explode is one comma-separated value; with it (the default), repeated keys.
+        if not param.get("explode", param.get("style", "form") == "form"):
+            assert len(values) == 1, f"a comma-separated list was sent {len(values)} times"
+            values = values[0].split(",")
         return [_scalar(v, resolve(s.get("items", {}))) for v in values]
     assert len(values) == 1, f"a scalar parameter was sent {len(values)} times"
     return _scalar(values[0], s)

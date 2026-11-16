@@ -27,7 +27,7 @@ Call = Callable[[Any, Any], Any]
 CALLS: dict[tuple[str, str], Call] = {
     # Emails
     ("POST", "/emails"): lambda c, b: c.emails.send(b, idempotency_key="key-1"),
-    ("POST", "/emails/batch"): lambda c, b: c.emails.send_batch(b, idempotency_key="key-2"),
+    ("POST", "/emails/batch"): lambda c, b: c.emails.batch(b, idempotency_key="key-2"),
     ("GET", "/emails"): lambda c, b: c.emails.list(limit=10),
     ("GET", "/emails/{id}"): lambda c, b: c.emails.get(ID),
     ("PATCH", "/emails/{id}"): lambda c, b: c.emails.update(ID, b),
@@ -60,11 +60,11 @@ CALLS: dict[tuple[str, str], Call] = {
     # Contacts
     ("POST", "/contacts"): lambda c, b: c.contacts.create(b),
     ("GET", "/contacts"): lambda c, b: c.contacts.list(),
-    ("POST", "/contacts/batch"): lambda c, b: c.contacts.create_batch(
+    ("POST", "/contacts/batch"): lambda c, b: c.contacts.batch.create(
         b, on_conflict="upsert", batch_validation="permissive"
     ),
-    ("POST", "/contacts/batch/get"): lambda c, b: c.contacts.get_batch(b),
-    ("POST", "/contacts/batch/remove"): lambda c, b: c.contacts.remove_batch(b),
+    ("POST", "/contacts/batch/get"): lambda c, b: c.contacts.batch.get(b),
+    ("POST", "/contacts/batch/remove"): lambda c, b: c.contacts.batch.remove(b),
     ("GET", "/contacts/{id}"): lambda c, b: c.contacts.get(ID),
     ("PATCH", "/contacts/{id}"): lambda c, b: c.contacts.update(ID, b),
     ("DELETE", "/contacts/{id}"): lambda c, b: c.contacts.delete(ID, erase=True),
@@ -134,8 +134,8 @@ CALLS: dict[tuple[str, str], Call] = {
     ("GET", "/suppressions"): lambda c, b: c.suppressions.list(origin="bounce"),
     ("GET", "/suppressions/{id}"): lambda c, b: c.suppressions.get(ID),
     ("DELETE", "/suppressions/{id}"): lambda c, b: c.suppressions.delete(ID),
-    ("POST", "/suppressions/batch/add"): lambda c, b: c.suppressions.create_batch(b),
-    ("POST", "/suppressions/batch/remove"): lambda c, b: c.suppressions.remove_batch(b),
+    ("POST", "/suppressions/batch/add"): lambda c, b: c.suppressions.batch.add(b),
+    ("POST", "/suppressions/batch/remove"): lambda c, b: c.suppressions.batch.remove(b),
     # Unsubscribes
     ("POST", "/unsubscribes"): lambda c, b: c.unsubscribes.create(b),
     ("GET", "/unsubscribes"): lambda c, b: c.unsubscribes.list(domain_id=ID),
@@ -156,12 +156,11 @@ CALLS: dict[tuple[str, str], Call] = {
     ("PATCH", "/inboxes/{inbox_id}"): lambda c, b: c.inboxes.update(INBOX, b),
     ("DELETE", "/inboxes/{inbox_id}"): lambda c, b: c.inboxes.delete(INBOX),
     ("POST", "/inboxes/{inbox_id}/emails"): lambda c, b: c.inboxes.send(INBOX, b),
-    ("GET", "/inboxes/events"): lambda c, b: c.inboxes.stream_events(max_reconnects=0),
-    ("GET", "/inboxes/{inbox_id}/events"): lambda c, b: c.inboxes.stream_inbox_events(
+    ("GET", "/inboxes/events"): lambda c, b: c.inboxes.events.stream(max_reconnects=0),
+    ("GET", "/inboxes/{inbox_id}/events"): lambda c, b: c.inboxes.events.stream_inbox(
         INBOX, max_reconnects=0
     ),
     ("GET", "/inboxes/{inbox_id}/agent"): lambda c, b: c.inboxes.agent.get(INBOX),
-    ("PATCH", "/inboxes/{inbox_id}/agent"): lambda c, b: c.inboxes.agent.update(INBOX, b),
     ("GET", "/inboxes/{inbox_id}/safety"): lambda c, b: c.inboxes.safety.get(INBOX),
     ("PATCH", "/inboxes/{inbox_id}/safety"): lambda c, b: c.inboxes.safety.update(INBOX, b),
     ("GET", "/inboxes/{inbox_id}/labels"): lambda c, b: c.inboxes.labels.list(INBOX),
@@ -247,7 +246,7 @@ def body_for(key: tuple[str, str]) -> Any:
 
 
 def test_table_matches_the_contract() -> None:
-    assert len(OPERATION_KEYS) == 136
+    assert len(OPERATION_KEYS) == 135
     assert set(CALLS) == OPERATION_KEYS
 
 
@@ -330,22 +329,34 @@ def test_sync_and_async_have_the_same_surface() -> None:
         async_methods |= _public_methods(getattr(async_, name), name)
     assert sync_methods == async_methods
     operations = {m for m in sync_methods if not m.endswith("_all")}
-    assert len(operations) == len(OPERATION_KEYS) == 136
+    assert len(operations) == len(OPERATION_KEYS) == 135
 
 
-def test_idempotency_key_where_the_contract_mentions_it() -> None:
-    """Operations whose text mentions the Idempotency-Key header take ``idempotency_key``."""
+def test_idempotency_key_where_the_contract_declares_it() -> None:
+    """Operations declaring the Idempotency-Key header take ``idempotency_key``; no other does."""
     client = BillionSend("bs_x")
     raw = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
     for path, item in raw["paths"].items():
         for method, op in item.items():
-            if "Idempotency-Key" not in json.dumps(op):
-                continue
-            key = (method.upper(), path)
-            source = inspect.getsource(CALLS[key])
-            target = re.search(r"c\.([\w.]+)\(", source)
-            assert target, key
+            declared = any(
+                p["in"] == "header" and p["name"] == "Idempotency-Key"
+                for p in op.get("parameters", [])
+            )
             obj: Any = client
-            for part in target.group(1).split("."):
-                obj = getattr(obj, part)
-            assert "idempotency_key" in inspect.signature(obj).parameters, key
+            for part in op["operationId"].split("."):
+                obj = getattr(obj, re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", part).lower())
+            takes = "idempotency_key" in inspect.signature(obj).parameters
+            assert takes == declared, (method.upper(), path)
+
+
+def test_methods_are_named_after_operation_ids() -> None:
+    """``CALLS`` reaches each operation through the method its operationId names."""
+    raw = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+    for path, item in raw["paths"].items():
+        for method, op in item.items():
+            snake = ".".join(
+                re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", part).lower()
+                for part in op["operationId"].split(".")
+            )
+            source = inspect.getsource(CALLS[(method.upper(), path)])
+            assert f"c.{snake}(" in source, (method.upper(), path, snake)

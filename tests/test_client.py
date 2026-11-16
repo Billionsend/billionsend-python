@@ -108,7 +108,7 @@ def test_timeout_object_is_passed_through(mock: ContractMock) -> None:
 
 def test_streams_get_a_longer_read_timeout(client: BillionSend, mock: ContractMock) -> None:
     client.timeout = 10.0
-    with client.inboxes.stream_events(max_reconnects=0) as stream:
+    with client.inboxes.events.stream(max_reconnects=0) as stream:
         list(stream)
     assert mock.last.request.extensions["timeout"]["read"] == 60.0
     assert mock.last.request.extensions["timeout"]["connect"] == 10.0

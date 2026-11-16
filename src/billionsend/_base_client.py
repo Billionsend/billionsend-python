@@ -47,17 +47,21 @@ def encode_path(value: str) -> str:
 
 
 def encode_query(query: Mapping[str, Any] | None) -> list[tuple[str, QueryValue]]:
-    """Drop unset values, write booleans as true/false and repeat the key for lists."""
+    """Drop unset values, write booleans as true/false and lists comma-separated in one key."""
+
+    def text(item: Any) -> str:
+        if isinstance(item, bool):
+            return "true" if item else "false"
+        return str(item)
+
     pairs: list[tuple[str, QueryValue]] = []
     for key, value in (query or {}).items():
         if value is None:
             continue
-        values = value if isinstance(value, (list, tuple)) else [value]
-        for item in values:
-            if isinstance(item, bool):
-                pairs.append((key, "true" if item else "false"))
-            else:
-                pairs.append((key, str(item)))
+        if isinstance(value, (list, tuple)):
+            pairs.append((key, ",".join(text(item) for item in value)))
+        else:
+            pairs.append((key, text(value)))
     return pairs
 
 

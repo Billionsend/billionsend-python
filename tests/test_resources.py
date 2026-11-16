@@ -42,7 +42,7 @@ def test_batch_send_is_a_json_array(client: BillionSend, mock: ContractMock) -> 
         {"from": "a@acme.dev", "to": "b@example.com", "subject": "1", "text": "one"},
         {"from": "a@acme.dev", "to": "c@example.com", "subject": "2", "text": "two"},
     ]
-    client.emails.send_batch(emails, idempotency_key="batch-1")
+    client.emails.batch(emails, idempotency_key="batch-1")
     assert mock.last.body == emails
     assert mock.last.request.headers["idempotency-key"] == "batch-1"
 
@@ -54,7 +54,9 @@ def test_list_query_parameters(client: BillionSend, mock: ContractMock) -> None:
     assert mock.last.query == {}
 
 
-def test_array_query_parameters_repeat_the_key(client: BillionSend, mock: ContractMock) -> None:
+def test_array_query_parameters_are_comma_separated(
+    client: BillionSend, mock: ContractMock
+) -> None:
     client.emails.metrics(
         start_date="2026-01-01",
         metrics=["sent", "delivered", "open_rate"],
@@ -62,8 +64,8 @@ def test_array_query_parameters_repeat_the_key(client: BillionSend, mock: Contra
         domain_id=[ID, ID2],
         granularity="daily",
     )
-    assert mock.last.query["metrics"] == ["sent", "delivered", "open_rate"]
-    assert mock.last.query["domain_id"] == [ID, ID2]
+    assert mock.last.query["metrics"] == ["sent,delivered,open_rate"]
+    assert mock.last.query["domain_id"] == [f"{ID},{ID2}"]
     assert mock.last.query["granularity"] == ["daily"]
 
 
@@ -76,13 +78,13 @@ def test_boolean_query_parameters(client: BillionSend, mock: ContractMock) -> No
 
 def test_keyword_named_query_parameter(client: BillionSend, mock: ContractMock) -> None:
     client.inboxes.threads.search(
-        "inbox@example.com", from_="boss@example.com", has_attachment="true"
+        "inbox@example.com", from_="boss@example.com", has_attachment=True
     )
     assert mock.last.query == {"from": ["boss@example.com"], "has_attachment": ["true"]}
 
 
 def test_path_parameters_are_encoded(client: BillionSend, mock: ContractMock) -> None:
-    client.inboxes.threads.emails.get("support@example.com", ID, ID2, include_quarantined="true")
+    client.inboxes.threads.emails.get("support@example.com", ID, ID2, include_quarantined=True)
     call = mock.last
     assert call.path_params == {"inbox_id": "support@example.com", "thread_id": ID, "email_id": ID2}
     assert call.request.url.raw_path.startswith(b"/inboxes/support@example.com/threads/")
@@ -91,7 +93,7 @@ def test_path_parameters_are_encoded(client: BillionSend, mock: ContractMock) ->
 
 
 def test_header_parameter(client: BillionSend, mock: ContractMock) -> None:
-    client.contacts.create_batch(
+    client.contacts.batch.create(
         [{"email": "a@example.com"}, {"email": "b@example.com", "first_name": "B"}],
         on_conflict="skip",
         batch_validation="permissive",
@@ -108,7 +110,7 @@ def test_optional_body(client: BillionSend, mock: ContractMock) -> None:
     client.inboxes.quarantine.release("inbox@example.com", ID, {"trust_sender": True})
     assert mock.last.body == {"trust_sender": True}
     client.inboxes.update("inbox@example.com")
-    assert mock.last.body == {}
+    assert mock.last.request.content == b""
 
 
 def test_no_body_operations_send_no_body(client: BillionSend, mock: ContractMock) -> None:

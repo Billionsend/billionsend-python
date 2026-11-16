@@ -65,12 +65,12 @@ from billionsend import BillionSend
 client = BillionSend()
 inbox = client.inboxes.create({"username": "support", "kind": "agent"})
 
-with client.inboxes.stream_inbox_events(inbox["id"], types=["inbox.email.received"]) as stream:
+with client.inboxes.events.stream_inbox(inbox["id"], types=["inbox.email.received"]) as stream:
     for event in stream:
         print(event.id, event.event, event.data)
 ```
 
-A stream reconnects on its own when the server ends it (it does so every few minutes) or the connection drops, sending `Last-Event-ID` so no event is lost. `max_reconnects` bounds consecutive failed reconnects (default 5, `0` turns reconnecting off), and `stream.last_event_id` holds the position to resume from later (`last_event_id=`). `client.inboxes.stream_events()` streams every inbox of the team. With the async client, `await` the method and `async for` the stream.
+A stream reconnects on its own when the server ends it (it does so every few minutes) or the connection drops, sending `Last-Event-ID` so no event is lost. `max_reconnects` bounds consecutive failed reconnects (default 5, `0` turns reconnecting off), and `stream.last_event_id` holds the position to resume from later (`last_event_id=`). `client.inboxes.events.stream()` streams every inbox of the team. With the async client, `await` the method and `async for` the stream.
 
 ### An agent signs itself up
 
@@ -88,23 +88,25 @@ print(signup["inbox"]["email_address"], client.agent.status()["status"])
 
 | Attribute | Covers |
 | --- | --- |
-| `emails` | send, send_batch, list, get, update, cancel, delete, insights, metrics |
+| `emails` | send, batch, list, get, update, cancel, delete, insights, metrics |
 | `emails.receiving` (`.attachments`) | received mail: list, get, delete, reply, forward; attachments |
 | `domains` | create, list, get, update, delete, verify |
 | `api_keys` | create, list, delete |
-| `contacts` (`.topics`, `.segments`) | create, list, get, update, delete, create_batch, get_batch, remove_batch, preferences_link |
+| `contacts` (`.topics`, `.segments`, `.batch`) | create, list, get, update, delete, preferences_link; `batch.create`, `batch.get`, `batch.remove` |
 | `audiences.contacts` | contacts addressed through an audience |
 | `contact_properties`, `segments` (`.contacts`), `topics` | contact data and grouping |
 | `broadcasts` | create, list, get, update, delete, send, duplicate, cancel |
 | `templates` | create, list, get, update, delete, publish, duplicate |
 | `webhooks` | create, list, get, update, delete, rotate |
-| `suppressions`, `unsubscribes` | suppression list (with batch add / remove) and opt-outs |
+| `suppressions` (`.batch`), `unsubscribes` | suppression list (`batch.add`, `batch.remove`) and opt-outs |
 | `verifications` | availability, estimate, create, list, get |
 | `usage`, `deliverability` | account usage and sending health |
-| `inboxes` | create, list, get, update, delete, send, stream_events, stream_inbox_events |
+| `inboxes` (`.events`) | create, list, get, update, delete, send; `events.stream`, `events.stream_inbox` |
 | `inboxes.agent`, `.safety`, `.labels`, `.codes`, `.quarantine`, `.drafts` | inbox settings, labels, verification codes, held mail, drafts |
 | `inboxes.threads` (`.labels`, `.emails`) | list, search, get, update, delete; thread labels; reply and forward |
 | `agent` | signup, status, claim_email |
+
+Each method is named after its operation's `operationId` in the API document: `emails.receiving.attachments.list` is `client.emails.receiving.attachments.list`, with camelCase written in snake_case (`agent.claimEmail` is `client.agent.claim_email`).
 
 Path parameters are positional (`client.domains.get(domain_id)`), the request body is a `dict` (`client.domains.create({"name": "acme.dev"})`) and query parameters are keyword arguments (`client.emails.list(limit=50)`). A parameter named after a Python keyword takes a trailing underscore (`from_=`). Every method also takes `extra_headers=` and `timeout=`.
 
@@ -123,7 +125,7 @@ async for domain in async_client.domains.list_all():
 
 ### Idempotency
 
-Sending methods (`emails.send`, `emails.send_batch`, replies, forwards, inbox sends and draft sends) take `idempotency_key=`, sent as the `Idempotency-Key` header: a retried request with the same key is not sent twice.
+Sending methods (`emails.send`, `emails.batch`, replies, forwards, inbox sends and draft sends) take `idempotency_key=`, sent as the `Idempotency-Key` header: a retried request with the same key is not sent twice.
 
 ## Errors
 

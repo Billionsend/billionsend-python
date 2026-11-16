@@ -115,7 +115,7 @@ def test_stream_yields_events(client: BillionSend, mock: ContractMock) -> None:
             "1}\n\n",
         ),
     )
-    with client.inboxes.stream_events(
+    with client.inboxes.events.stream(
         types=["email.received", "inbox.thread.created"], max_reconnects=0
     ) as stream:
         events = list(stream)
@@ -129,7 +129,7 @@ def test_stream_yields_events(client: BillionSend, mock: ContractMock) -> None:
 
 def test_resume_from_a_known_id(client: BillionSend, mock: ContractMock) -> None:
     mock.respond("GET", INBOX, headers=SSE, stream=sse("id: 6\ndata: {}\n\n"))
-    stream = client.inboxes.stream_inbox_events(
+    stream = client.inboxes.events.stream_inbox(
         "support@example.com", last_event_id="5", max_reconnects=0
     )
     list(stream)
@@ -148,7 +148,7 @@ def test_reconnects_after_the_server_closes(
         stream=sse("retry: 250\n\n", "id: 1\ndata: 1\n\nid: 2\ndata: 2\n\n"),
     )
     mock.respond("GET", TEAM, headers=SSE, stream=sse("id: 3\ndata: 3\n\n"))
-    stream = client.inboxes.stream_events()
+    stream = client.inboxes.events.stream()
     received = []
     for event in stream:
         received.append(event.data)
@@ -171,7 +171,7 @@ def test_reconnects_after_a_dropped_connection(
         stream=sse("id: 1\ndata: 1\n\n", "id: 2\nda", error=httpx.ReadError("reset")),
     )
     mock.respond("GET", TEAM, headers=SSE, stream=sse("id: 2\ndata: 2\n\n"))
-    with client.inboxes.stream_events() as stream:
+    with client.inboxes.events.stream() as stream:
         received = []
         for event in stream:
             received.append((event.id, event.data))
@@ -186,7 +186,7 @@ def test_early_break_keeps_the_position_of_the_last_event_handed_out(
     client: BillionSend, mock: ContractMock
 ) -> None:
     mock.respond("GET", TEAM, headers=SSE, stream=sse("id: 1\ndata: 1\n\nid: 2\ndata: 2\n\n"))
-    stream = client.inboxes.stream_events()
+    stream = client.inboxes.events.stream()
     for _ in stream:
         break
     stream.close()
@@ -196,14 +196,14 @@ def test_early_break_keeps_the_position_of_the_last_event_handed_out(
 def test_refused_stream_raises_on_open(client: BillionSend, mock: ContractMock) -> None:
     mock.error("GET", TEAM, 403, "restricted_api_key", "Needs a team-wide key")
     with pytest.raises(PermissionDeniedError) as info:
-        client.inboxes.stream_events()
+        client.inboxes.events.stream()
     assert info.value.message == "Needs a team-wide key"
 
 
 def test_refused_reconnect_raises(client: BillionSend, mock: ContractMock) -> None:
     mock.respond("GET", TEAM, headers=SSE, stream=sse("id: 1\ndata: 1\n\n"))
     mock.error("GET", TEAM, 403, "restricted_api_key", "key revoked")
-    stream = client.inboxes.stream_events()
+    stream = client.inboxes.events.stream()
     received: list[object] = []
     with pytest.raises(PermissionDeniedError):
         received.extend(e.data for e in stream)
@@ -216,7 +216,7 @@ def test_failed_reconnects_are_bounded(
     mock.respond("GET", TEAM, headers=SSE, stream=sse("id: 1\ndata: 1\n\n"))
     for _ in range(3):
         mock.error("GET", TEAM, 503, "service_unavailable", "busy")
-    stream = client.inboxes.stream_events(max_reconnects=2)
+    stream = client.inboxes.events.stream(max_reconnects=2)
     with pytest.raises(APIError):
         list(stream)
     assert len(mock.calls) == 4
@@ -230,7 +230,7 @@ def test_too_many_streams_waits_for_retry_after(
     mock.respond("GET", TEAM, headers=SSE, stream=sse("id: 1\ndata: 1\n\n"))
     mock.error("GET", TEAM, 429, "too_many_streams", "cap", headers={"retry-after": "4"})
     mock.respond("GET", TEAM, headers=SSE, stream=sse("id: 2\ndata: 2\n\n"))
-    stream = client.inboxes.stream_events()
+    stream = client.inboxes.events.stream()
     got = []
     for event in stream:
         got.append(event.id)
@@ -248,7 +248,7 @@ def test_no_reconnect_raises_the_drop(client: BillionSend, mock: ContractMock) -
         headers=SSE,
         stream=sse("id: 1\ndata: 1\n\n", error=httpx.RemoteProtocolError("eof")),
     )
-    stream = client.inboxes.stream_events(max_reconnects=0)
+    stream = client.inboxes.events.stream(max_reconnects=0)
     with pytest.raises(APIConnectionError):
         list(stream)
     assert stream.last_event_id == "1"
@@ -256,7 +256,7 @@ def test_no_reconnect_raises_the_drop(client: BillionSend, mock: ContractMock) -
 
 def test_negative_max_reconnects_is_refused(client: BillionSend) -> None:
     with pytest.raises(ValueError, match="max_reconnects"):
-        client.inboxes.stream_events(max_reconnects=-1)
+        client.inboxes.events.stream(max_reconnects=-1)
 
 
 async def test_async_stream_reconnects(
@@ -274,7 +274,7 @@ async def test_async_stream_reconnects(
         headers=SSE,
         stream=sse('id: 2\nevent: inbox.email.received\ndata: {"a":2}\n\n'),
     )
-    stream = await async_client.inboxes.stream_inbox_events(
+    stream = await async_client.inboxes.events.stream_inbox(
         "support@example.com", types="inbox.email.received"
     )
     received = []
@@ -295,7 +295,7 @@ async def test_async_stream_reconnects(
 async def test_async_refused_stream(async_client: AsyncBillionSend, mock: ContractMock) -> None:
     mock.error("GET", TEAM, 429, "too_many_streams", "cap")
     with pytest.raises(Exception, match="cap"):
-        await async_client.inboxes.stream_events()
+        await async_client.inboxes.events.stream()
 
 
 async def test_async_drop_without_reconnect(
@@ -304,6 +304,6 @@ async def test_async_drop_without_reconnect(
     mock.respond(
         "GET", TEAM, headers=SSE, stream=sse("id: 1\ndata: 1\n\n", error=httpx.ReadError("reset"))
     )
-    stream = await async_client.inboxes.stream_events(max_reconnects=0)
+    stream = await async_client.inboxes.events.stream(max_reconnects=0)
     with pytest.raises(APIConnectionError):
         [e async for e in stream]

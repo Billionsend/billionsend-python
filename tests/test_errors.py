@@ -152,9 +152,3 @@ async def test_async_network_failure() -> None:
     )
     with pytest.raises(APIConnectionError):
         await client.usage.get()
-
-
-def test_operation_without_success_answer(client: BillionSend) -> None:
-    with pytest.raises(ValidationError) as info:
-        client.inboxes.agent.update("support@example.com", {"instructions": "be brief"})
-    assert info.value.status_code == 422

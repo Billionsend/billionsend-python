@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping, Sequence
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 import httpx
 
@@ -156,6 +156,7 @@ from ..types import (
     SendBroadcastResponse,
     SendEmailRequest,
     SendEmailResponse,
+    SendInboxDraftRequest,
     SetInboxThreadLabelsRequest,
     StartVerificationRequest,
     StartVerificationResponse,
@@ -172,7 +173,6 @@ from ..types import (
     UpdateDomainRequest,
     UpdateEmailRequest,
     UpdateEmailResponse,
-    UpdateInboxAgentRequest,
     UpdateInboxDraftRequest,
     UpdateInboxLabelRequest,
     UpdateInboxRequest,
@@ -291,7 +291,7 @@ class InboxesThreadsEmailsResource:
         limit: int | None = None,
         after: str | None = None,
         before: str | None = None,
-        include_quarantined: str | None = None,
+        include_quarantined: bool | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> ListInboxThreadEmailsResponse:
@@ -326,7 +326,7 @@ class InboxesThreadsEmailsResource:
         thread_id: str,
         email_id: str,
         *,
-        include_quarantined: str | None = None,
+        include_quarantined: bool | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> InboxThreadEmail:
@@ -373,7 +373,7 @@ class InboxesThreadsEmailsResource:
         response = self._client.request(
             "POST",
             f"/inboxes/{encode_path(inbox_id)}/threads/{encode_path(thread_id)}/emails/{encode_path(email_id)}/reply",
-            body={} if params is None else params,
+            body=params,
             idempotency_key=idempotency_key,
             extra_headers=extra_headers,
             timeout=timeout,
@@ -559,7 +559,7 @@ class AudiencesContactsResource:
         response = self._client.request(
             "PATCH",
             f"/audiences/{encode_path(audience_id)}/contacts/{encode_path(id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -586,6 +586,82 @@ class AudiencesContactsResource:
             timeout=timeout,
         )
         return cast("RemoveContactResponse", response)
+
+
+class ContactsBatchResource:
+    """Operations on contacts batch."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def get(
+        self,
+        params: BatchGetContactsRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> BatchGetContactsResponse:
+        """Read contacts in bulk.
+
+        BillionSend extension: returns up to 1000 contacts by id or by email address in
+        one request, in request order, optionally with their properties and topic
+        subscriptions. Entries that match no contact are listed under `missing` instead
+        of failing the call. One call counts as one request against the rate limit.
+
+        ``POST /contacts/batch/get``
+        """
+        response = self._client.request(
+            "POST",
+            "/contacts/batch/get",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("BatchGetContactsResponse", response)
+
+    def remove(
+        self,
+        params: BatchRemoveContactsRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> BatchRemoveContactsResponse:
+        """Delete in bulk.
+
+        ``POST /contacts/batch/remove``
+        """
+        response = self._client.request(
+            "POST",
+            "/contacts/batch/remove",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("BatchRemoveContactsResponse", response)
+
+    def create(
+        self,
+        params: BatchContactsRequest,
+        *,
+        on_conflict: Literal["error", "skip", "upsert"] | None = None,
+        batch_validation: Literal["strict", "permissive"] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> BatchContactsResponse:
+        """Create in bulk.
+
+        ``POST /contacts/batch``
+        """
+        response = self._client.request(
+            "POST",
+            "/contacts/batch",
+            query={"on_conflict": on_conflict},
+            headers={"x-batch-validation": batch_validation},
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("BatchContactsResponse", response)
 
 
 class ContactsSegmentsResource:
@@ -688,6 +764,64 @@ class EmailsReceivingResource:
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
         self.attachments = EmailsReceivingAttachmentsResource(client)
+
+    def reply(
+        self,
+        id: str,
+        params: ReceivedEmailReplyRequest | None = None,
+        *,
+        idempotency_key: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ReceivedEmailSendResponse | InboxDraft:
+        """Reply to an email.
+
+        BillionSend extension: replies server-side, threaded with In-Reply-To and
+        References. It goes out from the inbox the email reached (`inbox_id` picks one),
+        else from the first address it was received for, or from `from`. A reply from an
+        inbox runs its rules and may be held as a draft (202). Accepts an `Idempotency-
+        Key`. Needs a full access key.
+
+        ``POST /emails/receiving/{id}/reply``
+        """
+        response = self._client.request(
+            "POST",
+            f"/emails/receiving/{encode_path(id)}/reply",
+            body=params,
+            idempotency_key=idempotency_key,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ReceivedEmailSendResponse | InboxDraft", response)
+
+    def forward(
+        self,
+        id: str,
+        params: ReceivedEmailForwardRequest,
+        *,
+        idempotency_key: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ReceivedEmailSendResponse | InboxDraft:
+        """Forward an email.
+
+        BillionSend extension: forwards server-side, inline under a note (default) or
+        with the original attached as forwarded_message.eml (`mode: attachment`), within
+        10 MiB. An email that carries malware is never forwarded. Sender rules and the
+        202 draft answer are those of the reply. Accepts an `Idempotency-Key`. Needs a
+        full access key.
+
+        ``POST /emails/receiving/{id}/forward``
+        """
+        response = self._client.request(
+            "POST",
+            f"/emails/receiving/{encode_path(id)}/forward",
+            body=params,
+            idempotency_key=idempotency_key,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ReceivedEmailSendResponse | InboxDraft", response)
 
     def list(
         self,
@@ -834,64 +968,6 @@ class EmailsReceivingResource:
         )
         return cast("DeleteReceivedEmailResponse", response)
 
-    def reply(
-        self,
-        id: str,
-        params: ReceivedEmailReplyRequest | None = None,
-        *,
-        idempotency_key: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> ReceivedEmailSendResponse | InboxDraft:
-        """Reply to an email.
-
-        BillionSend extension: replies server-side, threaded with In-Reply-To and
-        References. It goes out from the inbox the email reached (`inbox_id` picks one),
-        else from the first address it was received for, or from `from`. A reply from an
-        inbox runs its rules and may be held as a draft (202). Accepts an `Idempotency-
-        Key`. Needs a full access key.
-
-        ``POST /emails/receiving/{id}/reply``
-        """
-        response = self._client.request(
-            "POST",
-            f"/emails/receiving/{encode_path(id)}/reply",
-            body={} if params is None else params,
-            idempotency_key=idempotency_key,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("ReceivedEmailSendResponse | InboxDraft", response)
-
-    def forward(
-        self,
-        id: str,
-        params: ReceivedEmailForwardRequest,
-        *,
-        idempotency_key: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> ReceivedEmailSendResponse | InboxDraft:
-        """Forward an email.
-
-        BillionSend extension: forwards server-side, inline under a note (default) or
-        with the original attached as forwarded_message.eml (`mode: attachment`), within
-        10 MiB. An email that carries malware is never forwarded. Sender rules and the
-        202 draft answer are those of the reply. Accepts an `Idempotency-Key`. Needs a
-        full access key.
-
-        ``POST /emails/receiving/{id}/forward``
-        """
-        response = self._client.request(
-            "POST",
-            f"/emails/receiving/{encode_path(id)}/forward",
-            body=params,
-            idempotency_key=idempotency_key,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("ReceivedEmailSendResponse | InboxDraft", response)
-
 
 class InboxesAgentResource:
     """Operations on inboxes agent."""
@@ -918,29 +994,6 @@ class InboxesAgentResource:
         )
         return cast("InboxAgent", response)
 
-    def update(
-        self,
-        inbox_id: str,
-        params: UpdateInboxAgentRequest | None = None,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> dict[str, Any]:
-        """Update agent settings.
-
-        Always 422: BillionSend runs no hosted agent.
-
-        ``PATCH /inboxes/{inbox_id}/agent``
-        """
-        response = self._client.request(
-            "PATCH",
-            f"/inboxes/{encode_path(inbox_id)}/agent",
-            body={} if params is None else params,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("dict[str, Any]", response)
-
 
 class InboxesCodesResource:
     """Operations on inboxes codes."""
@@ -953,8 +1006,8 @@ class InboxesCodesResource:
         inbox_id: str,
         *,
         from_: str | None = None,
-        wait: str | None = None,
-        max_age: str | None = None,
+        wait: int | None = None,
+        max_age: int | None = None,
         since: str | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
@@ -1012,7 +1065,7 @@ class InboxesDraftsResource:
         response = self._client.request(
             "POST",
             f"/inboxes/{encode_path(inbox_id)}/drafts",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -1125,7 +1178,7 @@ class InboxesDraftsResource:
         response = self._client.request(
             "PATCH",
             f"/inboxes/{encode_path(inbox_id)}/drafts/{encode_path(draft_id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -1157,6 +1210,7 @@ class InboxesDraftsResource:
         self,
         inbox_id: str,
         draft_id: str,
+        params: SendInboxDraftRequest | None = None,
         *,
         idempotency_key: str | None = None,
         extra_headers: Mapping[str, str] | None = None,
@@ -1177,6 +1231,7 @@ class InboxesDraftsResource:
         response = self._client.request(
             "POST",
             f"/inboxes/{encode_path(inbox_id)}/drafts/{encode_path(draft_id)}/send",
+            body=params,
             idempotency_key=idempotency_key,
             extra_headers=extra_headers,
             timeout=timeout,
@@ -1206,6 +1261,75 @@ class InboxesDraftsResource:
             timeout=timeout,
         )
         return cast("InboxDraft", response)
+
+
+class InboxesEventsResource:
+    """Operations on inboxes events."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def stream(
+        self,
+        *,
+        types: str | Sequence[str] | None = None,
+        last_event_id: str | None = None,
+        max_reconnects: int = 5,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> EventStream:
+        """Stream inbox events.
+
+        BillionSend extension: a server-sent event stream of every inbox event of the
+        team, named like the webhook events (inbox.email.received, inbox.thread.created,
+        email.received, …; types narrows them), each carrying the webhook payload's
+        data. Send the key as a Bearer header; the stream stays open, and a client that
+        reconnects with Last-Event-ID resumes without losing events. Needs a team-wide
+        key: a key held to one domain streams one inbox at a time. An agent (an inbox-
+        scoped key, or an MCP connection) never receives the events about held mail
+        (inbox.email.quarantined), replay included, and naming them in types is a 403. A
+        stream closes within a few seconds once its key is revoked, its person leaves
+        the team or its inbox is gone; it is also closed every ten minutes or so, and
+        the client reconnects with Last-Event-ID. Streams are capped per key and per
+        team on each API process (429 too_many_streams).
+
+        ``GET /inboxes/events``
+        """
+        return self._client.stream_events(
+            "/inboxes/events",
+            query={"types": types if types is None or isinstance(types, str) else ",".join(types)},
+            last_event_id=last_event_id,
+            max_reconnects=max_reconnects,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+
+    def stream_inbox(
+        self,
+        inbox_id: str,
+        *,
+        types: str | Sequence[str] | None = None,
+        last_event_id: str | None = None,
+        max_reconnects: int = 5,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> EventStream:
+        """Stream one inbox's events.
+
+        BillionSend extension: the event stream of one inbox, as GET /inboxes/events,
+        ending when the inbox is deleted or expires. An inbox-scoped key may stream its
+        own inbox, without the events about held mail.
+
+        ``GET /inboxes/{inbox_id}/events``
+        """
+        return self._client.stream_events(
+            f"/inboxes/{encode_path(inbox_id)}/events",
+            query={"types": types if types is None or isinstance(types, str) else ",".join(types)},
+            last_event_id=last_event_id,
+            max_reconnects=max_reconnects,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
 
 
 class InboxesLabelsResource:
@@ -1275,7 +1399,7 @@ class InboxesLabelsResource:
         response = self._client.request(
             "PATCH",
             f"/inboxes/{encode_path(inbox_id)}/labels/{encode_path(label_id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -1448,7 +1572,7 @@ class InboxesSafetyResource:
         response = self._client.request(
             "PATCH",
             f"/inboxes/{encode_path(inbox_id)}/safety",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -1463,86 +1587,6 @@ class InboxesThreadsResource:
         self.emails = InboxesThreadsEmailsResource(client)
         self.labels = InboxesThreadsLabelsResource(client)
 
-    def list(
-        self,
-        inbox_id: str,
-        *,
-        limit: int | None = None,
-        after: str | None = None,
-        before: str | None = None,
-        folders: str | None = None,
-        labels: str | None = None,
-        read: str | None = None,
-        include_quarantined: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> ListInboxThreadsResponse:
-        """List threads.
-
-        Conversations of the inbox, most recently active first (`after` pages toward
-        older ones). Threads whose messages are all held for screening or in quarantine
-        are left out unless include_quarantined=true (never for inbox-scoped keys).
-        Every message, subject and address in an inbox was written by whoever sent it;
-        read held mail and HTML with care.
-
-        ``GET /inboxes/{inbox_id}/threads``
-        """
-        response = self._client.request(
-            "GET",
-            f"/inboxes/{encode_path(inbox_id)}/threads",
-            query={
-                "limit": limit,
-                "after": after,
-                "before": before,
-                "folders": folders,
-                "labels": labels,
-                "read": read,
-                "include_quarantined": include_quarantined,
-            },
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("ListInboxThreadsResponse", response)
-
-    def list_all(
-        self,
-        inbox_id: str,
-        *,
-        limit: int | None = None,
-        after: str | None = None,
-        before: str | None = None,
-        folders: str | None = None,
-        labels: str | None = None,
-        read: str | None = None,
-        include_quarantined: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> Iterator[ListInboxThreadsResponseDataItem]:
-        """Iterate over every item of :meth:`list`, fetching pages as needed.
-
-        Walks in the list's own order, from ``after`` (or the first page) on; pass
-        ``before`` instead to walk the other way.
-        """
-
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListInboxThreadsResponseDataItem], bool]:
-            page = self.list(
-                inbox_id,
-                limit=limit,
-                folders=folders,
-                labels=labels,
-                read=read,
-                include_quarantined=include_quarantined,
-                after=after_,
-                before=before_,
-                extra_headers=extra_headers,
-                timeout=timeout,
-            )
-            return page["data"], page["has_more"]
-
-        return paginate(fetch, after=after, before=before)
-
     def search(
         self,
         inbox_id: str,
@@ -1552,14 +1596,14 @@ class InboxesThreadsResource:
         before: str | None = None,
         folders: str | None = None,
         labels: str | None = None,
-        read: str | None = None,
-        include_quarantined: str | None = None,
+        read: bool | None = None,
+        include_quarantined: bool | None = None,
         query: str | None = None,
         from_: str | None = None,
         to: str | None = None,
         cc: str | None = None,
         bcc: str | None = None,
-        has_attachment: str | None = None,
+        has_attachment: bool | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
         extra_headers: Mapping[str, str] | None = None,
@@ -1609,14 +1653,14 @@ class InboxesThreadsResource:
         before: str | None = None,
         folders: str | None = None,
         labels: str | None = None,
-        read: str | None = None,
-        include_quarantined: str | None = None,
+        read: bool | None = None,
+        include_quarantined: bool | None = None,
         query: str | None = None,
         from_: str | None = None,
         to: str | None = None,
         cc: str | None = None,
         bcc: str | None = None,
-        has_attachment: str | None = None,
+        has_attachment: bool | None = None,
         start_date: str | None = None,
         end_date: str | None = None,
         extra_headers: Mapping[str, str] | None = None,
@@ -1646,6 +1690,86 @@ class InboxesThreadsResource:
                 has_attachment=has_attachment,
                 start_date=start_date,
                 end_date=end_date,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+            return page["data"], page["has_more"]
+
+        return paginate(fetch, after=after, before=before)
+
+    def list(
+        self,
+        inbox_id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        folders: str | None = None,
+        labels: str | None = None,
+        read: bool | None = None,
+        include_quarantined: bool | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListInboxThreadsResponse:
+        """List threads.
+
+        Conversations of the inbox, most recently active first (`after` pages toward
+        older ones). Threads whose messages are all held for screening or in quarantine
+        are left out unless include_quarantined=true (never for inbox-scoped keys).
+        Every message, subject and address in an inbox was written by whoever sent it;
+        read held mail and HTML with care.
+
+        ``GET /inboxes/{inbox_id}/threads``
+        """
+        response = self._client.request(
+            "GET",
+            f"/inboxes/{encode_path(inbox_id)}/threads",
+            query={
+                "limit": limit,
+                "after": after,
+                "before": before,
+                "folders": folders,
+                "labels": labels,
+                "read": read,
+                "include_quarantined": include_quarantined,
+            },
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListInboxThreadsResponse", response)
+
+    def list_all(
+        self,
+        inbox_id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        folders: str | None = None,
+        labels: str | None = None,
+        read: bool | None = None,
+        include_quarantined: bool | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListInboxThreadsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(
+            after_: str | None, before_: str | None
+        ) -> tuple[list[ListInboxThreadsResponseDataItem], bool]:
+            page = self.list(
+                inbox_id,
+                limit=limit,
+                folders=folders,
+                labels=labels,
+                read=read,
+                include_quarantined=include_quarantined,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
@@ -1698,7 +1822,7 @@ class InboxesThreadsResource:
         response = self._client.request(
             "PATCH",
             f"/inboxes/{encode_path(inbox_id)}/threads/{encode_path(thread_id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -1790,6 +1914,53 @@ class SegmentsContactsResource:
             return page["data"], page["has_more"]
 
         return paginate(fetch, after=after, before=before)
+
+
+class SuppressionsBatchResource:
+    """Operations on suppressions batch."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def add(
+        self,
+        params: BatchAddSuppressionsRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> BatchAddSuppressionsResponse:
+        """Add in bulk.
+
+        ``POST /suppressions/batch/add``
+        """
+        response = self._client.request(
+            "POST",
+            "/suppressions/batch/add",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("BatchAddSuppressionsResponse", response)
+
+    def remove(
+        self,
+        params: BatchRemoveSuppressionsRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> BatchRemoveSuppressionsResponse:
+        """Remove in bulk.
+
+        ``POST /suppressions/batch/remove``
+        """
+        response = self._client.request(
+            "POST",
+            "/suppressions/batch/remove",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("BatchRemoveSuppressionsResponse", response)
 
 
 class AgentResource:
@@ -2093,7 +2264,7 @@ class BroadcastsResource:
         response = self._client.request(
             "PATCH",
             f"/broadcasts/{encode_path(id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -2133,7 +2304,7 @@ class BroadcastsResource:
         response = self._client.request(
             "POST",
             f"/broadcasts/{encode_path(id)}/send",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -2293,7 +2464,7 @@ class ContactPropertiesResource:
         response = self._client.request(
             "PATCH",
             f"/contact-properties/{encode_path(id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -2324,6 +2495,7 @@ class ContactsResource:
 
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
+        self.batch = ContactsBatchResource(client)
         self.segments = ContactsSegmentsResource(client)
         self.topics = ContactsTopicsResource(client)
 
@@ -2401,75 +2573,6 @@ class ContactsResource:
 
         return paginate(fetch, after=after, before=before)
 
-    def create_batch(
-        self,
-        params: BatchContactsRequest,
-        *,
-        on_conflict: Literal["error", "skip", "upsert"] | None = None,
-        batch_validation: Literal["strict", "permissive"] | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> BatchContactsResponse:
-        """Create in bulk.
-
-        ``POST /contacts/batch``
-        """
-        response = self._client.request(
-            "POST",
-            "/contacts/batch",
-            query={"on_conflict": on_conflict},
-            headers={"x-batch-validation": batch_validation},
-            body=params,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("BatchContactsResponse", response)
-
-    def get_batch(
-        self,
-        params: BatchGetContactsRequest,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> BatchGetContactsResponse:
-        """Read contacts in bulk.
-
-        BillionSend extension: returns up to 1000 contacts by id or by email address in
-        one request, in request order, optionally with their properties and topic
-        subscriptions. Entries that match no contact are listed under `missing` instead
-        of failing the call. One call counts as one request against the rate limit.
-
-        ``POST /contacts/batch/get``
-        """
-        response = self._client.request(
-            "POST",
-            "/contacts/batch/get",
-            body=params,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("BatchGetContactsResponse", response)
-
-    def remove_batch(
-        self,
-        params: BatchRemoveContactsRequest | None = None,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> BatchRemoveContactsResponse:
-        """Delete in bulk.
-
-        ``POST /contacts/batch/remove``
-        """
-        response = self._client.request(
-            "POST",
-            "/contacts/batch/remove",
-            body={} if params is None else params,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("BatchRemoveContactsResponse", response)
-
     def get(
         self,
         id: str,
@@ -2504,7 +2607,7 @@ class ContactsResource:
         response = self._client.request(
             "PATCH",
             f"/contacts/{encode_path(id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -2698,7 +2801,7 @@ class DomainsResource:
         response = self._client.request(
             "PATCH",
             f"/domains/{encode_path(id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -2749,198 +2852,6 @@ class EmailsResource:
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
         self.receiving = EmailsReceivingResource(client)
-
-    def send(
-        self,
-        params: SendEmailRequest,
-        *,
-        idempotency_key: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> SendEmailResponse:
-        """Send an email.
-
-        ``POST /emails``
-        """
-        response = self._client.request(
-            "POST",
-            "/emails",
-            body=params,
-            idempotency_key=idempotency_key,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("SendEmailResponse", response)
-
-    def send_batch(
-        self,
-        params: BatchEmailRequest,
-        *,
-        idempotency_key: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> BatchEmailResponse:
-        """Send a batch of emails.
-
-        ``POST /emails/batch``
-        """
-        response = self._client.request(
-            "POST",
-            "/emails/batch",
-            body=params,
-            idempotency_key=idempotency_key,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("BatchEmailResponse", response)
-
-    def list(
-        self,
-        *,
-        limit: int | None = None,
-        after: str | None = None,
-        before: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> ListEmailsResponse:
-        """List emails.
-
-        ``GET /emails``
-        """
-        response = self._client.request(
-            "GET",
-            "/emails",
-            query={"limit": limit, "after": after, "before": before},
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("ListEmailsResponse", response)
-
-    def list_all(
-        self,
-        *,
-        limit: int | None = None,
-        after: str | None = None,
-        before: str | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> Iterator[ListEmailsResponseDataItem]:
-        """Iterate over every item of :meth:`list`, fetching pages as needed.
-
-        Walks in the list's own order, from ``after`` (or the first page) on; pass
-        ``before`` instead to walk the other way.
-        """
-
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListEmailsResponseDataItem], bool]:
-            page = self.list(
-                limit=limit,
-                after=after_,
-                before=before_,
-                extra_headers=extra_headers,
-                timeout=timeout,
-            )
-            return page["data"], page["has_more"]
-
-        return paginate(fetch, after=after, before=before)
-
-    def get(
-        self,
-        id: str,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> GetEmailResponse:
-        """Retrieve an email.
-
-        ``GET /emails/{id}``
-        """
-        response = self._client.request(
-            "GET",
-            f"/emails/{encode_path(id)}",
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("GetEmailResponse", response)
-
-    def update(
-        self,
-        id: str,
-        params: UpdateEmailRequest,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> UpdateEmailResponse:
-        """Update an email.
-
-        ``PATCH /emails/{id}``
-        """
-        response = self._client.request(
-            "PATCH",
-            f"/emails/{encode_path(id)}",
-            body=params,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("UpdateEmailResponse", response)
-
-    def delete(
-        self,
-        id: str,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> RemoveEmailResponse:
-        """Delete an email.
-
-        ``DELETE /emails/{id}``
-        """
-        response = self._client.request(
-            "DELETE",
-            f"/emails/{encode_path(id)}",
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("RemoveEmailResponse", response)
-
-    def cancel(
-        self,
-        id: str,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> CancelEmailResponse:
-        """Cancel an email.
-
-        ``POST /emails/{id}/cancel``
-        """
-        response = self._client.request(
-            "POST",
-            f"/emails/{encode_path(id)}/cancel",
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("CancelEmailResponse", response)
-
-    def insights(
-        self,
-        id: str,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> EmailInsightsResponse:
-        """Get email insights.
-
-        ``GET /emails/{id}/insights``
-        """
-        response = self._client.request(
-            "GET",
-            f"/emails/{encode_path(id)}/insights",
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("EmailInsightsResponse", response)
 
     def metrics(
         self,
@@ -3006,6 +2917,200 @@ class EmailsResource:
         )
         return cast("EmailsMetricsResponse", response)
 
+    def send(
+        self,
+        params: SendEmailRequest,
+        *,
+        idempotency_key: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> SendEmailResponse:
+        """Send an email.
+
+        ``POST /emails``
+        """
+        response = self._client.request(
+            "POST",
+            "/emails",
+            body=params,
+            idempotency_key=idempotency_key,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("SendEmailResponse", response)
+
+    def list(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListEmailsResponse:
+        """List emails.
+
+        ``GET /emails``
+        """
+        response = self._client.request(
+            "GET",
+            "/emails",
+            query={"limit": limit, "after": after, "before": before},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListEmailsResponse", response)
+
+    def list_all(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListEmailsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(
+            after_: str | None, before_: str | None
+        ) -> tuple[list[ListEmailsResponseDataItem], bool]:
+            page = self.list(
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+            return page["data"], page["has_more"]
+
+        return paginate(fetch, after=after, before=before)
+
+    def batch(
+        self,
+        params: BatchEmailRequest,
+        *,
+        batch_validation: Literal["strict", "permissive"] | None = None,
+        idempotency_key: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> BatchEmailResponse:
+        """Send a batch of emails.
+
+        ``POST /emails/batch``
+        """
+        response = self._client.request(
+            "POST",
+            "/emails/batch",
+            headers={"x-batch-validation": batch_validation},
+            body=params,
+            idempotency_key=idempotency_key,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("BatchEmailResponse", response)
+
+    def cancel(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> CancelEmailResponse:
+        """Cancel an email.
+
+        ``POST /emails/{id}/cancel``
+        """
+        response = self._client.request(
+            "POST",
+            f"/emails/{encode_path(id)}/cancel",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("CancelEmailResponse", response)
+
+    def update(
+        self,
+        id: str,
+        params: UpdateEmailRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> UpdateEmailResponse:
+        """Update an email.
+
+        ``PATCH /emails/{id}``
+        """
+        response = self._client.request(
+            "PATCH",
+            f"/emails/{encode_path(id)}",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("UpdateEmailResponse", response)
+
+    def get(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> GetEmailResponse:
+        """Retrieve an email.
+
+        ``GET /emails/{id}``
+        """
+        response = self._client.request(
+            "GET",
+            f"/emails/{encode_path(id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("GetEmailResponse", response)
+
+    def delete(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> RemoveEmailResponse:
+        """Delete an email.
+
+        ``DELETE /emails/{id}``
+        """
+        response = self._client.request(
+            "DELETE",
+            f"/emails/{encode_path(id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("RemoveEmailResponse", response)
+
+    def insights(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> EmailInsightsResponse:
+        """Get email insights.
+
+        ``GET /emails/{id}/insights``
+        """
+        response = self._client.request(
+            "GET",
+            f"/emails/{encode_path(id)}/insights",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("EmailInsightsResponse", response)
+
 
 class InboxesResource:
     """Operations on inboxes."""
@@ -3015,6 +3120,7 @@ class InboxesResource:
         self.agent = InboxesAgentResource(client)
         self.codes = InboxesCodesResource(client)
         self.drafts = InboxesDraftsResource(client)
+        self.events = InboxesEventsResource(client)
         self.labels = InboxesLabelsResource(client)
         self.quarantine = InboxesQuarantineResource(client)
         self.safety = InboxesSafetyResource(client)
@@ -3042,7 +3148,7 @@ class InboxesResource:
         response = self._client.request(
             "POST",
             "/inboxes",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -3146,7 +3252,7 @@ class InboxesResource:
         response = self._client.request(
             "PATCH",
             f"/inboxes/{encode_path(inbox_id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -3197,68 +3303,6 @@ class InboxesResource:
             timeout=timeout,
         )
         return cast("InboxSentEmail | InboxDraft", response)
-
-    def stream_events(
-        self,
-        *,
-        types: str | Sequence[str] | None = None,
-        last_event_id: str | None = None,
-        max_reconnects: int = 5,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> EventStream:
-        """Stream inbox events.
-
-        BillionSend extension: a server-sent event stream of every inbox event of the
-        team, named like the webhook events (inbox.email.received, inbox.thread.created,
-        email.received, …; types narrows them), each carrying the webhook payload's
-        data. Send the key as a Bearer header; the stream stays open, and a client that
-        reconnects with Last-Event-ID resumes without losing events. Needs a team-wide
-        key: a key held to one domain streams one inbox at a time. An agent (an inbox-
-        scoped key, or an MCP connection) never receives the events about held mail
-        (inbox.email.quarantined), replay included, and naming them in types is a 403. A
-        stream closes within a few seconds once its key is revoked, its person leaves
-        the team or its inbox is gone; it is also closed every ten minutes or so, and
-        the client reconnects with Last-Event-ID. Streams are capped per key and per
-        team on each API process (429 too_many_streams).
-
-        ``GET /inboxes/events``
-        """
-        return self._client.stream_events(
-            "/inboxes/events",
-            query={"types": types if types is None or isinstance(types, str) else ",".join(types)},
-            last_event_id=last_event_id,
-            max_reconnects=max_reconnects,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-
-    def stream_inbox_events(
-        self,
-        inbox_id: str,
-        *,
-        types: str | Sequence[str] | None = None,
-        last_event_id: str | None = None,
-        max_reconnects: int = 5,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> EventStream:
-        """Stream one inbox's events.
-
-        BillionSend extension: the event stream of one inbox, as GET /inboxes/events,
-        ending when the inbox is deleted or expires. An inbox-scoped key may stream its
-        own inbox, without the events about held mail.
-
-        ``GET /inboxes/{inbox_id}/events``
-        """
-        return self._client.stream_events(
-            f"/inboxes/{encode_path(inbox_id)}/events",
-            query={"types": types if types is None or isinstance(types, str) else ",".join(types)},
-            last_event_id=last_event_id,
-            max_reconnects=max_reconnects,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
 
 
 class SegmentsResource:
@@ -3373,7 +3417,7 @@ class SegmentsResource:
         response = self._client.request(
             "PATCH",
             f"/segments/{encode_path(id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -3404,6 +3448,7 @@ class SuppressionsResource:
 
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
+        self.batch = SuppressionsBatchResource(client)
 
     def create(
         self,
@@ -3517,46 +3562,6 @@ class SuppressionsResource:
         )
         return cast("RemoveSuppressionResponse", response)
 
-    def create_batch(
-        self,
-        params: BatchAddSuppressionsRequest,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> BatchAddSuppressionsResponse:
-        """Add in bulk.
-
-        ``POST /suppressions/batch/add``
-        """
-        response = self._client.request(
-            "POST",
-            "/suppressions/batch/add",
-            body=params,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("BatchAddSuppressionsResponse", response)
-
-    def remove_batch(
-        self,
-        params: BatchRemoveSuppressionsRequest | None = None,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> BatchRemoveSuppressionsResponse:
-        """Remove in bulk.
-
-        ``POST /suppressions/batch/remove``
-        """
-        response = self._client.request(
-            "POST",
-            "/suppressions/batch/remove",
-            body={} if params is None else params,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("BatchRemoveSuppressionsResponse", response)
-
 
 class TemplatesResource:
     """Operations on templates."""
@@ -3669,7 +3674,7 @@ class TemplatesResource:
         response = self._client.request(
             "PATCH",
             f"/templates/{encode_path(id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -3811,7 +3816,7 @@ class TopicsResource:
         response = self._client.request(
             "PATCH",
             f"/topics/{encode_path(id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -3842,26 +3847,6 @@ class UnsubscribesResource:
 
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
-
-    def create(
-        self,
-        params: CreateUnsubscribeRequest,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> UnsubscribeResponse:
-        """Record an unsubscribe.
-
-        ``POST /unsubscribes``
-        """
-        response = self._client.request(
-            "POST",
-            "/unsubscribes",
-            body=params,
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("UnsubscribeResponse", response)
 
     def list(
         self,
@@ -3916,6 +3901,26 @@ class UnsubscribesResource:
             return page["data"], page["has_more"]
 
         return paginate(fetch, after=after, before=before)
+
+    def create(
+        self,
+        params: CreateUnsubscribeRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> UnsubscribeResponse:
+        """Record an unsubscribe.
+
+        ``POST /unsubscribes``
+        """
+        response = self._client.request(
+            "POST",
+            "/unsubscribes",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("UnsubscribeResponse", response)
 
     def delete(
         self,
@@ -4216,7 +4221,7 @@ class WebhooksResource:
         response = self._client.request(
             "PATCH",
             f"/webhooks/{encode_path(id)}",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -4262,7 +4267,7 @@ class WebhooksResource:
         response = self._client.request(
             "POST",
             f"/webhooks/{encode_path(id)}/rotate",
-            body={} if params is None else params,
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -4277,6 +4282,7 @@ __all__ = [
     "BroadcastsResource",
     "ContactPropertiesResource",
     "ContactsResource",
+    "ContactsBatchResource",
     "ContactsSegmentsResource",
     "ContactsTopicsResource",
     "DeliverabilityResource",
@@ -4288,6 +4294,7 @@ __all__ = [
     "InboxesAgentResource",
     "InboxesCodesResource",
     "InboxesDraftsResource",
+    "InboxesEventsResource",
     "InboxesLabelsResource",
     "InboxesQuarantineResource",
     "InboxesSafetyResource",
@@ -4297,6 +4304,7 @@ __all__ = [
     "SegmentsResource",
     "SegmentsContactsResource",
     "SuppressionsResource",
+    "SuppressionsBatchResource",
     "TemplatesResource",
     "TopicsResource",
     "UnsubscribesResource",
