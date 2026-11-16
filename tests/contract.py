@@ -24,6 +24,7 @@ from collections.abc import AsyncIterator, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+from urllib.parse import unquote
 
 import httpx
 from jsonschema import Draft202012Validator
@@ -307,8 +308,9 @@ class ContractMock:
 
     def handle(self, request: httpx.Request) -> httpx.Response:
         assert str(request.url).startswith(BASE_URL), f"unexpected host in {request.url}"
-        path = request.url.path.removeprefix(httpx.URL(BASE_URL).path.rstrip("/"))
-        op, path_params = find_operation(request.method, path)
+        raw_path = request.url.raw_path.split(b"?", 1)[0].decode("ascii")
+        op, encoded = find_operation(request.method, raw_path)
+        path_params = {k: unquote(v) for k, v in encoded.items()}
         where = f"{op.method} {op.path}"
 
         # Authentication
@@ -370,8 +372,9 @@ class ContractMock:
     @staticmethod
     def default_response(op: Operation) -> httpx.Response:
         if not op.has_success():
-            # The operation has no success answer at all; answer its first error.
-            code = min(int(c) for c in op.spec["responses"])
+            # The operation has no success answer at all; answer 422 (or its first error).
+            codes = sorted(int(c) for c in op.spec["responses"])
+            code = 422 if 422 in codes else codes[0]
             body = {"statusCode": code, "name": "validation_error", "message": "Not supported"}
             return httpx.Response(code, json=body)
         status, media, schema = op.success()

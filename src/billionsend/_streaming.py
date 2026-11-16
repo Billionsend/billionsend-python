@@ -57,6 +57,7 @@ class SSEDecoder:
         self._utf8 = codecs.getincrementaldecoder("utf-8")(errors="replace")
         self._buffer = ""
         self._started = False
+        self._after_cr = False
         self._data: list[str] = []
         self._event = ""
         self.last_event_id: str | None = None
@@ -66,7 +67,11 @@ class SSEDecoder:
         text = self._utf8.decode(chunk)
         if not self._started and text:
             self._started = True
-            text = text.removeprefix("﻿")
+            text = text.removeprefix("\ufeff")
+        if self._after_cr and text:
+            # The previous chunk ended in CR: a LF here completes that CRLF.
+            self._after_cr = False
+            text = text.removeprefix("\n")
         self._buffer += text
         events: list[ServerSentEvent] = []
         while True:
@@ -76,12 +81,12 @@ class SSEDecoder:
             if not ends:
                 break
             index = min(ends)
+            end = index + 1
             if self._buffer[index] == "\r":
                 if index + 1 == len(self._buffer):
-                    break  # a CR at the end of a chunk may be the first half of CRLF
-                end = index + 2 if self._buffer[index + 1] == "\n" else index + 1
-            else:
-                end = index + 1
+                    self._after_cr = True
+                elif self._buffer[index + 1] == "\n":
+                    end = index + 2
             line = self._buffer[:index]
             self._buffer = self._buffer[end:]
             event = self._line(line)
