@@ -8,6 +8,7 @@ import json
 import os
 import random
 import time
+import uuid
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote
@@ -34,7 +35,10 @@ DEFAULT_MAX_RETRIES = 2
 # An event stream sends a keepalive comment every 15 seconds; a read that waits
 # far longer than that means the connection is gone.
 STREAM_READ_TIMEOUT = 60.0
+# A Retry-After longer than this is not waited out: the error is raised at once.
 MAX_RETRY_DELAY = 60.0
+# A retry of a keyed request can meet the first attempt still running on the server.
+CONCURRENT_IDEMPOTENT = "concurrent_idempotent_requests"
 IDEMPOTENT_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "PUT", "DELETE"})
 
 Timeout = float | httpx.Timeout
@@ -128,6 +132,14 @@ def connection_error(exc: httpx.TransportError) -> APIConnectionError:
     return APIConnectionError(f"Connection error: {exc}" if str(exc) else "Connection error")
 
 
+def _merge(headers: dict[str, str], more: Mapping[str, str]) -> None:
+    """Set headers, replacing any already there under another spelling of the name."""
+    for name, value in more.items():
+        for existing in [k for k in headers if k.lower() == name.lower()]:
+            del headers[existing]
+        headers[name] = value
+
+
 class BaseClient:
     api_key: str | None
     base_url: str
@@ -177,20 +189,65 @@ class BaseClient:
             out["Content-Type"] = "application/json"
         if idempotency_key is not None:
             out["Idempotency-Key"] = idempotency_key
-        out.update(self._default_headers)
-        out.update({k: v for k, v in (headers or {}).items() if v is not None})
-        out.update(extra_headers or {})
+        _merge(out, self._default_headers)
+        _merge(out, {k: v for k, v in (headers or {}).items() if v is not None})
+        _merge(out, extra_headers or {})
         return out
 
-    def _should_retry(self, response: httpx.Response, method: str, idempotent: bool) -> bool:
-        if response.status_code != 429 and response.status_code < 500:
-            return False
-        return method in IDEMPOTENT_METHODS or idempotent
+    def _request_headers(
+        self,
+        *,
+        auth: bool,
+        has_body: bool,
+        idempotency_key: str | None,
+        auto_idempotency_key: bool,
+        extra_headers: Mapping[str, str] | None,
+        headers: Mapping[str, str | None] | None,
+    ) -> tuple[dict[str, str], bool]:
+        """The headers of a request, and whether it carries an idempotency key.
 
-    def _retry_delay(self, attempt: int, response: httpx.Response) -> float:
-        hinted = parse_retry_after(response)
-        if hinted is not None:
-            return min(hinted, MAX_RETRY_DELAY)
+        A sending operation without a key gets a fresh one, so that the retries
+        of this one call share it and the API sends the email once.
+        """
+        out = self._headers(
+            auth=auth,
+            has_body=has_body,
+            idempotency_key=idempotency_key,
+            headers=headers,
+            extra_headers=extra_headers,
+        )
+        keyed = any(k.lower() == "idempotency-key" for k in out)
+        if auto_idempotency_key and not keyed:
+            out["Idempotency-Key"] = str(uuid.uuid4())
+            keyed = True
+        return out, keyed
+
+    def _retry_delay(
+        self, attempt: int, error: BillionSendError, *, method: str, keyed: bool
+    ) -> float | None:
+        """Seconds to wait before retrying after ``error``, or None to raise it.
+
+        Retried: requests that are safe to repeat (GET, PUT, DELETE…, or any
+        request with an idempotency key) failing with 429, 5xx or no answer at
+        all, and a keyed request whose first attempt is still running (409
+        concurrent_idempotent_requests).
+        """
+        if attempt >= self.max_retries:
+            return None
+        if method not in IDEMPOTENT_METHODS and not keyed:
+            return None
+        status = error.status_code
+        if isinstance(error, APIConnectionError):
+            pass
+        elif status == 409:
+            if not (keyed and error.name == CONCURRENT_IDEMPOTENT):
+                return None
+        elif status is None or (status != 429 and status < 500):
+            return None
+        if error.response is not None:
+            hinted = parse_retry_after(error.response)
+            if hinted is not None:
+                return hinted if hinted <= MAX_RETRY_DELAY else None
         base = min(0.5 * 2.0**attempt, 8.0)
         return base * (1 - 0.25 * random.random())  # noqa: S311 - jitter, not security
 
@@ -257,18 +314,19 @@ class SyncAPIClient(BaseClient):
         headers: Mapping[str, str | None] | None = None,
         body: Any = None,
         idempotency_key: str | None = None,
+        auto_idempotency_key: bool = False,
         auth: bool = True,
         extra_headers: Mapping[str, str] | None = None,
         timeout: Timeout | None = None,
     ) -> Any:
-        all_headers = self._headers(
+        all_headers, keyed = self._request_headers(
             auth=auth,
             has_body=body is not None,
             idempotency_key=idempotency_key,
+            auto_idempotency_key=auto_idempotency_key,
             headers=headers,
             extra_headers=extra_headers,
         )
-        idempotent = any(k.lower() == "idempotency-key" for k in all_headers)
         attempt = 0
         while True:
             request = self._build(
@@ -280,19 +338,22 @@ class SyncAPIClient(BaseClient):
                 headers=all_headers,
                 timeout=timeout,
             )
+            error: BillionSendError
+            cause: Exception | None = None
             try:
                 response = self._http.send(request)
             except httpx.TransportError as exc:
-                raise connection_error(exc) from exc
-            if response.is_success:
-                return parse_json(response)
-            if attempt < self.max_retries and self._should_retry(response, method, idempotent):
-                delay = self._retry_delay(attempt, response)
+                error, cause = connection_error(exc), exc
+            else:
+                if response.is_success:
+                    return parse_json(response)
+                error = error_from_response(response)
                 response.close()
-                self._sleep(delay)
-                attempt += 1
-                continue
-            raise error_from_response(response)
+            delay = self._retry_delay(attempt, error, method=method, keyed=keyed)
+            if delay is None:
+                raise error from cause
+            self._sleep(delay)
+            attempt += 1
 
     def stream_events(
         self,
@@ -395,18 +456,19 @@ class AsyncAPIClient(BaseClient):
         headers: Mapping[str, str | None] | None = None,
         body: Any = None,
         idempotency_key: str | None = None,
+        auto_idempotency_key: bool = False,
         auth: bool = True,
         extra_headers: Mapping[str, str] | None = None,
         timeout: Timeout | None = None,
     ) -> Any:
-        all_headers = self._headers(
+        all_headers, keyed = self._request_headers(
             auth=auth,
             has_body=body is not None,
             idempotency_key=idempotency_key,
+            auto_idempotency_key=auto_idempotency_key,
             headers=headers,
             extra_headers=extra_headers,
         )
-        idempotent = any(k.lower() == "idempotency-key" for k in all_headers)
         attempt = 0
         while True:
             request = self._build(
@@ -418,19 +480,22 @@ class AsyncAPIClient(BaseClient):
                 headers=all_headers,
                 timeout=timeout,
             )
+            error: BillionSendError
+            cause: Exception | None = None
             try:
                 response = await self._http.send(request)
             except httpx.TransportError as exc:
-                raise connection_error(exc) from exc
-            if response.is_success:
-                return parse_json(response)
-            if attempt < self.max_retries and self._should_retry(response, method, idempotent):
-                delay = self._retry_delay(attempt, response)
+                error, cause = connection_error(exc), exc
+            else:
+                if response.is_success:
+                    return parse_json(response)
+                error = error_from_response(response)
                 await response.aclose()
-                await self._sleep(delay)
-                attempt += 1
-                continue
-            raise error_from_response(response)
+            delay = self._retry_delay(attempt, error, method=method, keyed=keyed)
+            if delay is None:
+                raise error from cause
+            await self._sleep(delay)
+            attempt += 1
 
     async def stream_events(
         self,

@@ -90,3 +90,12 @@ async def test_async_backward(async_client: AsyncBillionSend, mock: ContractMock
     seen = [s["id"] async for s in async_client.suppressions.list_all(before=IDS[5])]
     assert seen == IDS[3:5] + IDS[1:3]
     assert mock.calls[1].query == {"before": [IDS[3]]}
+
+
+def test_thread_emails_of_either_direction(client: BillionSend, mock: ContractMock) -> None:
+    path = "/inboxes/{inbox_id}/threads/{thread_id}/emails"
+    page(mock, path, IDS[0:2], True)
+    page(mock, path, IDS[2:3], False)
+    seen = [e["id"] for e in client.inboxes.threads.emails.list_all("in_1", "th_1", limit=2)]
+    assert seen == IDS[0:3]
+    assert mock.calls[1].query == {"limit": ["2"], "after": [IDS[1]]}

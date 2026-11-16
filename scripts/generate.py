@@ -393,13 +393,21 @@ def build_operations(spec: dict[str, Any], types: TypeGen) -> list[Operation]:
                 page = types.resolve(success[0][1]["content"]["application/json"]["schema"])
                 props = page.get("properties", {})
                 items = types.resolve(props.get("data", {}).get("items", {}))
-                if "has_more" in props and "id" in items.get("properties", {}):
+                if "has_more" in props and has_id(types, items):
                     o.page_type = returns[0]
                     o.page_item = types.annotation(
                         props["data"]["items"], returns[0] + "DataItem"
                     ).split(" | ")[0]
         ops.append(o)
     return ops
+
+
+def has_id(types: Any, schema: dict[str, Any]) -> bool:
+    """Whether every shape an item can take has an ``id`` (the cursor of the next page)."""
+    branches = schema.get("anyOf") or schema.get("oneOf")
+    if branches:
+        return all(has_id(types, types.resolve(b)) for b in branches)
+    return "id" in schema.get("properties", {})
 
 
 # ----------------------------------------------------------------------- resources
@@ -540,6 +548,11 @@ def render_method(op: Operation, is_async: bool, aw: str) -> list[str]:
     doc = op.summary.rstrip(".") + "." if op.summary else ""
     if op.description:
         doc += "\n\n" + op.description
+    if op.idempotency_key:
+        doc += (
+            "\n\nSent with an ``Idempotency-Key``: ``idempotency_key`` when given, else"
+            " one made up for this call, so that its retries never send twice."
+        )
     doc += f"\n\n``{op.method} {op.path}``"
     lines += docstring(doc, "        ")
     kwargs = call_kwargs(op)
@@ -563,7 +576,7 @@ def render_method(op: Operation, is_async: bool, aw: str) -> list[str]:
         else:
             call.append("body={} if params is None else params")
     if op.idempotency_key:
-        call.append("idempotency_key=idempotency_key")
+        call += ["idempotency_key=idempotency_key", "auto_idempotency_key=True"]
     if op.path == "/agent/signup":
         call.append("auth=False")
     call += ["extra_headers=extra_headers", "timeout=timeout"]

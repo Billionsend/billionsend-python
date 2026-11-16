@@ -43,7 +43,10 @@ ID = "6a1f1d38-3c55-4a4e-9a57-0f2b3c4d5e6f"
 def test_status_maps_to_exception(
     client: BillionSend, mock: ContractMock, status: int, name: str, cls: type[BillionSendError]
 ) -> None:
-    mock.error("POST", "/emails", status, name, f"refused with {status}")
+    client.max_retries = 0
+    mock.error(
+        "POST", "/emails", status, name, f"refused with {status}", headers={"x-request-id": "r1"}
+    )
     with pytest.raises(cls) as info:
         client.emails.send(
             {"from": "a@acme.dev", "to": "b@example.com", "subject": "s", "text": "t"}
@@ -53,6 +56,7 @@ def test_status_maps_to_exception(
     assert isinstance(err, BillionSendError)
     assert (err.status_code, err.name, err.message) == (status, name, f"refused with {status}")
     assert err.response is not None
+    assert err.request_id == "r1"
     assert str(err) == f"{status} {name}: refused with {status}"
 
 

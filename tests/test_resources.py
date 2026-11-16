@@ -32,9 +32,11 @@ def test_send_email_body_and_idempotency_key(client: BillionSend, mock: Contract
     assert "id" in result
 
 
-def test_send_email_without_idempotency_key(client: BillionSend, mock: ContractMock) -> None:
+def test_send_email_without_idempotency_key_gets_one(
+    client: BillionSend, mock: ContractMock
+) -> None:
     client.emails.send({"from": "a@acme.dev", "to": "b@example.com", "subject": "s", "text": "t"})
-    assert "idempotency-key" not in mock.last.request.headers
+    assert len(mock.last.request.headers["idempotency-key"]) == 36
 
 
 def test_batch_send_is_a_json_array(client: BillionSend, mock: ContractMock) -> None:

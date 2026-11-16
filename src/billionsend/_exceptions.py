@@ -1,9 +1,10 @@
 """Errors raised by the BillionSend client.
 
 Every error carries the API's error shape: ``status_code``, ``name`` and
-``message``. A failure that never produced an API answer (a network error, a
-timeout, a response that is not JSON) is turned into the same shape, with
-``name`` ``"application_error"``.
+``message``, plus the ``request_id`` the API answered with (its
+``x-request-id`` header). A failure that never produced an API answer (a
+network error, a timeout, a response that is not JSON) is turned into the same
+shape, with ``name`` ``"application_error"``.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ __all__ = [
     "PermissionDeniedError",
     "RateLimitError",
     "ValidationError",
+    "WebhookVerificationError",
 ]
 
 
@@ -31,12 +33,14 @@ class BillionSendError(Exception):
         status_code: the HTTP status of the answer, or ``None`` when there was none.
         name: the API's error name, such as ``"validation_error"``.
         message: a human-readable explanation.
+        request_id: the API's id of the request (``x-request-id``), when it sent one.
         response: the HTTP response, when there was one.
     """
 
     status_code: int | None
     name: str
     message: str
+    request_id: str | None
     response: httpx.Response | None
 
     def __init__(
@@ -52,6 +56,7 @@ class BillionSendError(Exception):
         self.name = name
         self.status_code = status_code
         self.response = response
+        self.request_id = response.headers.get("x-request-id") if response is not None else None
 
     def __str__(self) -> str:
         status = f"{self.status_code} " if self.status_code is not None else ""
@@ -60,7 +65,7 @@ class BillionSendError(Exception):
     def __repr__(self) -> str:
         return (
             f"{type(self).__name__}(status_code={self.status_code!r}, "
-            f"name={self.name!r}, message={self.message!r})"
+            f"name={self.name!r}, message={self.message!r}, request_id={self.request_id!r})"
         )
 
 
@@ -118,6 +123,13 @@ class RateLimitError(BillionSendError):
 
 class APIError(BillionSendError):
     """5xx: the API failed to answer the request."""
+
+
+class WebhookVerificationError(BillionSendError):
+    """A webhook delivery whose signature, timestamp or headers do not check out."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, name="webhook_verification_error", status_code=None)
 
 
 _BY_STATUS: dict[int, type[BillionSendError]] = {

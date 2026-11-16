@@ -19,9 +19,20 @@ from ._exceptions import (
     PermissionDeniedError,
     RateLimitError,
     ValidationError,
+    WebhookVerificationError,
 )
-from ._streaming import AsyncEventStream, EventStream, ServerSentEvent
+from ._streaming import (
+    AsyncEventStream,
+    EventStream,
+    InboxStreamEvent,
+    InboxStreamEventData,
+    ServerSentEvent,
+    StreamEvent,
+    StreamGapData,
+    StreamGapEvent,
+)
 from ._version import __version__
+from ._webhooks import WebhookEvent, verify_webhook
 
 __all__ = [
     "APIConnectionError",
@@ -34,11 +45,19 @@ __all__ = [
     "BillionSendError",
     "ConflictError",
     "EventStream",
+    "InboxStreamEvent",
+    "InboxStreamEventData",
     "NotFoundError",
     "PermissionDeniedError",
     "RateLimitError",
     "ServerSentEvent",
+    "StreamEvent",
+    "StreamGapData",
+    "StreamGapEvent",
     "ValidationError",
+    "WebhookEvent",
+    "WebhookVerificationError",
     "__version__",
     "types",
+    "verify_webhook",
 ]

@@ -248,7 +248,7 @@ class ChunkStream(httpx.SyncByteStream, httpx.AsyncByteStream):
 @dataclass
 class ContractMock:
     calls: list[Recorded] = field(default_factory=list)
-    queued: dict[OpKey, deque[httpx.Response]] = field(default_factory=dict)
+    queued: dict[OpKey, deque[httpx.Response | Exception]] = field(default_factory=dict)
 
     # -- configuration
 
@@ -293,6 +293,12 @@ class ContractMock:
             json_body={"statusCode": status, "name": name, "message": message},
             **kw,
         )
+
+    def fail(self, method: str, path: str, error: Exception) -> None:
+        """Queue a transport failure (the request reached the server, no answer came back)."""
+        key = (method, path)
+        assert key in OPERATION_KEYS, f"{method} {path} is not in the contract"
+        self.queued.setdefault(key, deque()).append(error)
 
     # -- transport
 
@@ -368,7 +374,10 @@ class ContractMock:
 
         queued = self.queued.get(op.key)
         if queued:
-            return queued.popleft()
+            answer = queued.popleft()
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
         return self.default_response(op)
 
     @staticmethod

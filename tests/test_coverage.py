@@ -360,3 +360,33 @@ def test_methods_are_named_after_operation_ids() -> None:
             )
             source = inspect.getsource(CALLS[(method.upper(), path)])
             assert f"c.{snake}(" in source, (method.upper(), path, snake)
+
+
+def _method(client: Any, operation_id: str) -> Any:
+    obj: Any = client
+    for part in operation_id.split("."):
+        obj = getattr(obj, re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", part).lower())
+    return obj
+
+
+def test_every_cursor_list_has_an_iterator() -> None:
+    """A list taking ``after`` / ``before`` and answering ``has_more`` has a ``*_all`` iterator."""
+    raw = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
+    sync, async_ = BillionSend("bs_x"), AsyncBillionSend("bs_x")
+    lists = []
+    for item in raw["paths"].values():
+        op = item.get("get")
+        if op is None:
+            continue
+        query = {p["name"] for p in op.get("parameters", []) if p["in"] == "query"}
+        schema = op["responses"]["200"]["content"].get("application/json", {}).get("schema", {})
+        ref = schema.get("$ref", "")
+        page = raw["components"]["schemas"][ref.rsplit("/", 1)[-1]] if ref else schema
+        if {"after", "before"} <= query and "has_more" in page.get("properties", {}):
+            lists.append(op["operationId"])
+            for client in (sync, async_):
+                method = _method(client, op["operationId"])
+                assert callable(getattr(method.__self__, method.__name__ + "_all", None)), op[
+                    "operationId"
+                ]
+    assert len(lists) == 21

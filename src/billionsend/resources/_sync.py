@@ -320,6 +320,39 @@ class InboxesThreadsEmailsResource:
         )
         return cast("ListInboxThreadEmailsResponse", response)
 
+    def list_all(
+        self,
+        inbox_id: str,
+        thread_id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        include_quarantined: bool | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[InboxThreadEmail]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> tuple[list[InboxThreadEmail], bool]:
+            page = self.list(
+                inbox_id,
+                thread_id,
+                limit=limit,
+                include_quarantined=include_quarantined,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+            return page["data"], page["has_more"]
+
+        return paginate(fetch, after=after, before=before)
+
     def get(
         self,
         inbox_id: str,
@@ -368,6 +401,9 @@ class InboxesThreadsEmailsResource:
         inbox's rules hold the reply (or `requires_approval` is true) it is kept as a
         draft for a person to approve and the answer is 202 with the Draft.
 
+        Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
+        up for this call, so that its retries never send twice.
+
         ``POST /inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/reply``
         """
         response = self._client.request(
@@ -375,6 +411,7 @@ class InboxesThreadsEmailsResource:
             f"/inboxes/{encode_path(inbox_id)}/threads/{encode_path(thread_id)}/emails/{encode_path(email_id)}/reply",
             body=params,
             idempotency_key=idempotency_key,
+            auto_idempotency_key=True,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -399,6 +436,9 @@ class InboxesThreadsEmailsResource:
         An email that carries malware is never forwarded. Accepts an `Idempotency-Key`;
         a forward the inbox's rules hold answers 202 with the Draft.
 
+        Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
+        up for this call, so that its retries never send twice.
+
         ``POST /inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/forward``
         """
         response = self._client.request(
@@ -406,6 +446,7 @@ class InboxesThreadsEmailsResource:
             f"/inboxes/{encode_path(inbox_id)}/threads/{encode_path(thread_id)}/emails/{encode_path(email_id)}/forward",
             body=params,
             idempotency_key=idempotency_key,
+            auto_idempotency_key=True,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -782,6 +823,9 @@ class EmailsReceivingResource:
         inbox runs its rules and may be held as a draft (202). Accepts an `Idempotency-
         Key`. Needs a full access key.
 
+        Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
+        up for this call, so that its retries never send twice.
+
         ``POST /emails/receiving/{id}/reply``
         """
         response = self._client.request(
@@ -789,6 +833,7 @@ class EmailsReceivingResource:
             f"/emails/receiving/{encode_path(id)}/reply",
             body=params,
             idempotency_key=idempotency_key,
+            auto_idempotency_key=True,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -811,6 +856,9 @@ class EmailsReceivingResource:
         202 draft answer are those of the reply. Accepts an `Idempotency-Key`. Needs a
         full access key.
 
+        Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
+        up for this call, so that its retries never send twice.
+
         ``POST /emails/receiving/{id}/forward``
         """
         response = self._client.request(
@@ -818,6 +866,7 @@ class EmailsReceivingResource:
             f"/emails/receiving/{encode_path(id)}/forward",
             body=params,
             idempotency_key=idempotency_key,
+            auto_idempotency_key=True,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -1226,6 +1275,9 @@ class InboxesDraftsResource:
         never the team's limits or the shared domain's rules. An agent's send of a draft
         runs the rules and may hold it (202).
 
+        Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
+        up for this call, so that its retries never send twice.
+
         ``POST /inboxes/{inbox_id}/drafts/{draft_id}/send``
         """
         response = self._client.request(
@@ -1233,6 +1285,7 @@ class InboxesDraftsResource:
             f"/inboxes/{encode_path(inbox_id)}/drafts/{encode_path(draft_id)}/send",
             body=params,
             idempotency_key=idempotency_key,
+            auto_idempotency_key=True,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -2927,6 +2980,9 @@ class EmailsResource:
     ) -> SendEmailResponse:
         """Send an email.
 
+        Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
+        up for this call, so that its retries never send twice.
+
         ``POST /emails``
         """
         response = self._client.request(
@@ -2934,6 +2990,7 @@ class EmailsResource:
             "/emails",
             body=params,
             idempotency_key=idempotency_key,
+            auto_idempotency_key=True,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -3001,6 +3058,9 @@ class EmailsResource:
     ) -> BatchEmailResponse:
         """Send a batch of emails.
 
+        Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
+        up for this call, so that its retries never send twice.
+
         ``POST /emails/batch``
         """
         response = self._client.request(
@@ -3009,6 +3069,7 @@ class EmailsResource:
             headers={"x-batch-validation": batch_validation},
             body=params,
             idempotency_key=idempotency_key,
+            auto_idempotency_key=True,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -3292,6 +3353,9 @@ class InboxesResource:
     ) -> InboxSentEmail | InboxDraft:
         """Send an email from an inbox.
 
+        Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
+        up for this call, so that its retries never send twice.
+
         ``POST /inboxes/{inbox_id}/emails``
         """
         response = self._client.request(
@@ -3299,6 +3363,7 @@ class InboxesResource:
             f"/inboxes/{encode_path(inbox_id)}/emails",
             body=params,
             idempotency_key=idempotency_key,
+            auto_idempotency_key=True,
             extra_headers=extra_headers,
             timeout=timeout,
         )

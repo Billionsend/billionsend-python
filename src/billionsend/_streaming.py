@@ -1,11 +1,19 @@
 """Server-sent event streams (``text/event-stream``).
 
 A stream is opened by the method that returns it, so a refused stream raises at
-once. Iterating yields :class:`ServerSentEvent` objects; when the server ends
-the stream (it does so every few minutes) or the connection drops, the stream
-reconnects with ``Last-Event-ID`` set to the last id it saw and resumes without
-losing events. ``max_reconnects`` bounds the number of consecutive failed
-reconnect attempts (0 turns reconnecting off).
+once. Iterating yields :class:`InboxStreamEvent` and :class:`StreamGapEvent`
+objects; when the server ends the stream (it does so every few minutes) or the
+connection drops, the stream reconnects with ``Last-Event-ID`` set to the last
+id it saw and resumes without losing events. ``max_reconnects`` bounds the
+number of consecutive failed reconnect attempts (0 turns reconnecting off).
+
+The server replays at most 24 hours of missed events. A stream resumed from an
+older id first gets a :class:`StreamGapEvent`: events may be missing, so read
+the REST lists to catch up. It is handed out once per position, although the
+server repeats it on every reconnect until a newer event arrives.
+
+The stream of one inbox ends (iteration stops) after that inbox's
+``inbox.deleted`` or ``inbox.expired`` event.
 """
 
 from __future__ import annotations
@@ -15,7 +23,7 @@ import json
 from collections.abc import AsyncIterator, Iterator, Mapping
 from dataclasses import dataclass
 from types import TracebackType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
 
 import httpx
 
@@ -25,10 +33,24 @@ from ._exceptions import APIConnectionError, APIError, BillionSendError, RateLim
 if TYPE_CHECKING:
     from ._base_client import AsyncAPIClient, SyncAPIClient, Timeout
 
-__all__ = ["AsyncEventStream", "EventStream", "SSEDecoder", "ServerSentEvent"]
+__all__ = [
+    "AsyncEventStream",
+    "EventStream",
+    "InboxStreamEvent",
+    "InboxStreamEventData",
+    "SSEDecoder",
+    "ServerSentEvent",
+    "StreamEvent",
+    "StreamGapData",
+    "StreamGapEvent",
+]
 
 DEFAULT_RETRY = 1.0
 MAX_RECONNECT_DELAY = 30.0
+GAP_EVENT: Literal["stream.gap"] = "stream.gap"
+TEAM_STREAM_PATH = "/inboxes/events"
+# After one of these, the server ends an inbox's own stream for good.
+INBOX_GONE = frozenset({"inbox.deleted", "inbox.expired"})
 
 
 @dataclass(frozen=True)
@@ -44,6 +66,51 @@ class ServerSentEvent:
     id: str | None
     event: str
     data: Any
+
+
+class InboxStreamEventData(TypedDict):
+    """The ``data`` of an inbox event: the webhook event of the same name, wrapped."""
+
+    type: str
+    """The event name, such as ``"inbox.email.received"`` (same as ``event``)."""
+    created_at: str
+    """When it happened (ISO 8601)."""
+    inbox_id: str | None
+    """The inbox it is about (``None`` for an ``email.received`` that reached no inbox)."""
+    data: dict[str, Any]
+    """The webhook payload's ``data``."""
+
+
+@dataclass(frozen=True)
+class InboxStreamEvent:
+    """One inbox event.
+
+    Attributes:
+        id: the stream position after this event (resume from it with ``last_event_id=``).
+        event: the event name, such as ``"inbox.email.received"``.
+        data: ``type``, ``created_at``, ``inbox_id`` and the webhook payload's ``data``.
+    """
+
+    id: str
+    event: str
+    data: InboxStreamEventData
+
+
+class StreamGapData(TypedDict):
+    reason: str
+    """Why events may be missing: ``"retention"`` (the position is over 24 hours old)."""
+
+
+@dataclass(frozen=True)
+class StreamGapEvent:
+    """Events may have been lost before this point: catch up through the REST lists."""
+
+    data: StreamGapData
+    id: None = None
+    event: Literal["stream.gap"] = GAP_EVENT
+
+
+StreamEvent = InboxStreamEvent | StreamGapEvent
 
 
 class SSEDecoder:
@@ -127,6 +194,15 @@ class SSEDecoder:
         return event
 
 
+def _typed(sse: ServerSentEvent) -> StreamEvent:
+    if sse.event == GAP_EVENT:
+        reason = sse.data.get("reason") if isinstance(sse.data, dict) else None
+        return StreamGapEvent(data={"reason": reason if isinstance(reason, str) else "unknown"})
+    if sse.id is None or not isinstance(sse.data, dict):
+        raise BillionSendError(f"Malformed {sse.event!r} event in the stream")
+    return InboxStreamEvent(id=sse.id, event=sse.event, data=cast("InboxStreamEventData", sse.data))
+
+
 def _retryable(exc: BillionSendError) -> bool:
     return isinstance(exc, (APIConnectionError, RateLimitError, APIError))
 
@@ -151,15 +227,27 @@ class _StreamState:
         self.timeout = timeout
         self.retry = DEFAULT_RETRY
         self.closed = False
+        self.one_inbox = path.rstrip("/") != TEAM_STREAM_PATH
+        # The position a gap was last handed out at; the server repeats it on reconnect.
+        self.gap_at: tuple[str | None] | None = None
 
     def failure_delay(self, failures: int, exc: BillionSendError) -> float:
         if isinstance(exc, RateLimitError) and exc.retry_after is not None:
             return min(exc.retry_after, MAX_RECONNECT_DELAY)
         return min(self.retry * 2.0 ** (failures - 1), MAX_RECONNECT_DELAY)
 
-    def saw(self, event: ServerSentEvent) -> None:
-        if event.id is not None:
-            self.last_event_id = event.id
+    def saw(self, sse: ServerSentEvent) -> StreamEvent | None:
+        """The event to hand out for ``sse``, or None for a repeated gap."""
+        event = _typed(sse)
+        if isinstance(event, StreamGapEvent):
+            if self.gap_at == (self.last_event_id,):
+                return None
+            self.gap_at = (self.last_event_id,)
+            return event
+        self.last_event_id = event.id
+        if self.one_inbox and event.event in INBOX_GONE:
+            self.closed = True
+        return event
 
     def saw_end(self, decoder: SSEDecoder) -> None:
         # Every event was handed out; an id sent without data still moves the position.
@@ -219,7 +307,7 @@ class EventStream:
             else:
                 return
 
-    def __iter__(self) -> Iterator[ServerSentEvent]:
+    def __iter__(self) -> Iterator[StreamEvent]:
         s = self._state
         while not s.closed:
             if self._response is None:
@@ -230,10 +318,16 @@ class EventStream:
             error: APIConnectionError | None = None
             try:
                 for chunk in response.iter_bytes():
-                    for event in decoder.feed(chunk):
-                        s.saw(event)
-                        yield event
-                s.saw_end(decoder)
+                    for sse in decoder.feed(chunk):
+                        event = s.saw(sse)
+                        if event is not None:
+                            yield event
+                        if s.closed:
+                            break
+                    if s.closed:
+                        break
+                else:
+                    s.saw_end(decoder)
             except httpx.TransportError as exc:
                 error = connection_error(exc)
             finally:
@@ -314,7 +408,7 @@ class AsyncEventStream:
             else:
                 return
 
-    async def __aiter__(self) -> AsyncIterator[ServerSentEvent]:
+    async def __aiter__(self) -> AsyncIterator[StreamEvent]:
         s = self._state
         while not s.closed:
             if self._response is None:
@@ -325,10 +419,16 @@ class AsyncEventStream:
             error: APIConnectionError | None = None
             try:
                 async for chunk in response.aiter_bytes():
-                    for event in decoder.feed(chunk):
-                        s.saw(event)
-                        yield event
-                s.saw_end(decoder)
+                    for sse in decoder.feed(chunk):
+                        event = s.saw(sse)
+                        if event is not None:
+                            yield event
+                        if s.closed:
+                            break
+                    if s.closed:
+                        break
+                else:
+                    s.saw_end(decoder)
             except httpx.TransportError as exc:
                 error = connection_error(exc)
             finally:
