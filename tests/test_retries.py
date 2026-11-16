@@ -86,7 +86,7 @@ def test_idempotency_key_via_extra_headers_also_retries(
     client: BillionSend, mock: ContractMock, sleeps: Sleeps
 ) -> None:
     mock.error("POST", "/domains", 502, "bad_gateway", "upstream")
-    client.domains.create({"name": "example.com"}, extra_headers={"Idempotency-Key": "d1"})
+    client.domains.create({"name": "example.com"}, extra_headers={"idempotency-key": "d1"})
     assert len(mock.calls) == 2
 
 

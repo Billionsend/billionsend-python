@@ -264,7 +264,7 @@ class SyncAPIClient(BaseClient):
             headers=headers,
             extra_headers=extra_headers,
         )
-        idempotent = "Idempotency-Key" in all_headers
+        idempotent = any(k.lower() == "idempotency-key" for k in all_headers)
         attempt = 0
         while True:
             request = self._build(
@@ -402,7 +402,7 @@ class AsyncAPIClient(BaseClient):
             headers=headers,
             extra_headers=extra_headers,
         )
-        idempotent = "Idempotency-Key" in all_headers
+        idempotent = any(k.lower() == "idempotency-key" for k in all_headers)
         attempt = 0
         while True:
             request = self._build(
