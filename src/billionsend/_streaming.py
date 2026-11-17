@@ -47,6 +47,8 @@ __all__ = [
 
 DEFAULT_RETRY = 1.0
 MAX_RECONNECT_DELAY = 30.0
+# A refusal asking to wait longer than this ends the stream with that error.
+MAX_RETRY_AFTER = 60.0
 GAP_EVENT: Literal["stream.gap"] = "stream.gap"
 TEAM_STREAM_PATH = "/inboxes/events"
 # After one of these, the server ends an inbox's own stream for good.
@@ -231,9 +233,15 @@ class _StreamState:
         # The position a gap was last handed out at; the server repeats it on reconnect.
         self.gap_at: tuple[str | None] | None = None
 
-    def failure_delay(self, failures: int, exc: BillionSendError) -> float:
-        if isinstance(exc, RateLimitError) and exc.retry_after is not None:
-            return min(exc.retry_after, MAX_RECONNECT_DELAY)
+    def failure_delay(self, failures: int, exc: BillionSendError) -> float | None:
+        """The wait before the next reconnect, or None to give up on ``exc`` at once.
+
+        A refusal with ``retry-after`` (a 429 for the stream cap, a 5xx) is waited out
+        as it asks, unless it asks for more than a minute; otherwise the wait backs
+        off from the stream's ``retry`` up to ``MAX_RECONNECT_DELAY``.
+        """
+        if isinstance(exc, (RateLimitError, APIError)) and exc.retry_after is not None:
+            return None if exc.retry_after > MAX_RETRY_AFTER else exc.retry_after
         return min(self.retry * 2.0 ** (failures - 1), MAX_RECONNECT_DELAY)
 
     def saw(self, sse: ServerSentEvent) -> StreamEvent | None:
@@ -301,9 +309,10 @@ class EventStream:
                 self.open()
             except BillionSendError as exc:
                 failures += 1
-                if not _retryable(exc) or failures > self._state.max_reconnects:
+                delay = self._state.failure_delay(failures, exc)
+                if not _retryable(exc) or failures > self._state.max_reconnects or delay is None:
                     raise
-                self._client._sleep(self._state.failure_delay(failures, exc))
+                self._client._sleep(delay)
             else:
                 return
 
@@ -402,9 +411,10 @@ class AsyncEventStream:
                 await self.open()
             except BillionSendError as exc:
                 failures += 1
-                if not _retryable(exc) or failures > self._state.max_reconnects:
+                delay = self._state.failure_delay(failures, exc)
+                if not _retryable(exc) or failures > self._state.max_reconnects or delay is None:
                     raise
-                await self._client._sleep(self._state.failure_delay(failures, exc))
+                await self._client._sleep(delay)
             else:
                 return
 

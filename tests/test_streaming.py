@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncIterable
 
 import httpx
 import pytest
@@ -16,6 +17,7 @@ from billionsend import (
     InboxStreamEvent,
     NotFoundError,
     PermissionDeniedError,
+    RateLimitError,
     ServerSentEvent,
     StreamEvent,
     StreamGapEvent,
@@ -119,6 +121,11 @@ def ev(id: str, n: int = 0, event: str = "inbox.email.received", inbox: str | No
         "data": {"n": n},
     }
     return f"id: {id}\nevent: {event}\ndata: {json.dumps(body)}\n\n"
+
+
+async def drain(stream: AsyncIterable[StreamEvent]) -> None:
+    async for _ in stream:
+        pass
 
 
 GAP = 'event: stream.gap\ndata: {"reason":"retention"}\n\n'
@@ -339,6 +346,101 @@ def test_too_many_streams_waits_for_retry_after(
     assert got == ["1", "2"]
     assert sleeps == [1.0, 4.0]
     assert mock.calls[2].request.headers["last-event-id"] == "1"
+
+
+def test_a_5xx_reconnect_waits_for_its_retry_after(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(ev("1")))
+    mock.error("GET", TEAM, 503, "service_unavailable", "busy", headers={"retry-after": "7"})
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(ev("2")))
+    got = []
+    for event in client.inboxes.events.stream():
+        got.append(event.id)
+        if len(got) == 2:
+            break
+    assert got == ["1", "2"]
+    assert sleeps == [1.0, 7.0]
+
+
+def test_a_retry_after_under_a_minute_is_waited_in_full(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(ev("1")))
+    mock.error("GET", TEAM, 429, "too_many_streams", "cap", headers={"retry-after": "45"})
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(ev("2")))
+    got = []
+    for event in client.inboxes.events.stream():
+        got.append(event.id)
+        if len(got) == 2:
+            break
+    assert sleeps == [1.0, 45.0]
+
+
+def test_a_retry_after_over_a_minute_raises_at_once(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(ev("1")))
+    mock.error("GET", TEAM, 429, "too_many_streams", "cap", headers={"retry-after": "120"})
+    stream = client.inboxes.events.stream(max_reconnects=5)
+    with pytest.raises(RateLimitError) as info:
+        list(stream)
+    assert info.value.retry_after == 120.0
+    assert len(mock.calls) == 2
+    assert sleeps == [1.0]
+
+
+def test_reconnects_refused_to_the_end_raise_the_rate_limit(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(ev("1")))
+    for _ in range(3):
+        mock.error("GET", TEAM, 429, "too_many_streams", "cap", headers={"retry-after": "2"})
+    stream = client.inboxes.events.stream(max_reconnects=2)
+    with pytest.raises(RateLimitError) as info:
+        list(stream)
+    assert info.value.name == "too_many_streams"
+    assert len(mock.calls) == 4
+    assert sleeps == [1.0, 2.0, 2.0]
+
+
+def test_reconnects_that_never_answer_raise_a_connection_error(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(ev("1")))
+    for _ in range(3):
+        mock.fail("GET", TEAM, httpx.ConnectError("refused"))
+    stream = client.inboxes.events.stream(max_reconnects=2)
+    with pytest.raises(APIConnectionError):
+        list(stream)
+    assert len(mock.calls) == 4
+
+
+async def test_async_retry_after_over_a_minute_raises_at_once(
+    async_client: AsyncBillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(ev("1")))
+    mock.error("GET", TEAM, 503, "service_unavailable", "busy", headers={"retry-after": "90"})
+    stream = await async_client.inboxes.events.stream()
+    with pytest.raises(APIError) as info:
+        await drain(stream)
+    assert info.value.retry_after == 90.0
+    assert sleeps == [1.0]
+
+
+async def test_async_5xx_reconnect_waits_for_its_retry_after(
+    async_client: AsyncBillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(ev("1")))
+    mock.error("GET", TEAM, 502, "bad_gateway", "busy", headers={"retry-after": "3"})
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(ev("2")))
+    got = []
+    async for event in await async_client.inboxes.events.stream():
+        got.append(event.id)
+        if len(got) == 2:
+            break
+    assert got == ["1", "2"]
+    assert sleeps == [1.0, 3.0]
 
 
 def test_no_reconnect_raises_the_drop(client: BillionSend, mock: ContractMock) -> None:

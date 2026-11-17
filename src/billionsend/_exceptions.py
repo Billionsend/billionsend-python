@@ -122,7 +122,22 @@ class RateLimitError(BillionSendError):
 
 
 class APIError(BillionSendError):
-    """5xx: the API failed to answer the request."""
+    """5xx: the API failed to answer the request; ``retry_after`` holds the server's hint in
+    seconds, when it sent one."""
+
+    retry_after: float | None
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        name: str = "application_error",
+        status_code: int | None = None,
+        response: httpx.Response | None = None,
+        retry_after: float | None = None,
+    ) -> None:
+        super().__init__(message, name=name, status_code=status_code, response=response)
+        self.retry_after = retry_after
 
 
 class WebhookVerificationError(BillionSendError):

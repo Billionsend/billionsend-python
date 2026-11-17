@@ -17,6 +17,7 @@ import httpx
 
 from ._exceptions import (
     APIConnectionError,
+    APIError,
     APITimeoutError,
     BillionSendError,
     RateLimitError,
@@ -104,6 +105,14 @@ def error_from_response(response: httpx.Response) -> BillionSendError:
     cls = error_class(status)
     if cls is RateLimitError:
         return RateLimitError(
+            message,
+            name=name,
+            status_code=status,
+            response=response,
+            retry_after=parse_retry_after(response),
+        )
+    if cls is APIError:
+        return APIError(
             message,
             name=name,
             status_code=status,

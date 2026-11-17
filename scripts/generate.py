@@ -612,17 +612,14 @@ def render_paginator(op: Operation, is_async: bool) -> list[str]:
     ]
     inner_head = "async def" if is_async else "def"
     aw = "await " if is_async else ""
-    fetch_returns = f"tuple[list[{item}], bool]"
-    lines.append(
-        f"        {inner_head} fetch(after_: str | None, before_: str | None) -> {fetch_returns}:"
-    )
-    lines.append(f"            page = {aw}self.{op.name}(")
+    lines.append(f"        {inner_head} fetch(after_: str | None, before_: str | None) -> object:")
+    lines.append(f"            return {aw}self.{op.name}(")
     lines += [f"                {a}," for a in args + passthrough]
     lines.append("            )")
-    lines.append('            return page["data"], page["has_more"]')
     lines.append("")
     fn = "apaginate" if is_async else "paginate"
-    lines.append(f"        return {fn}(fetch, after=after, before=before)")
+    kind = "AsyncIterator" if is_async else "Iterator"
+    lines.append(f'        return cast("{kind}[{item}]", {fn}(fetch, after=after, before=before))')
     return lines
 
 

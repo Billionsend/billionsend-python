@@ -239,10 +239,8 @@ class EmailsReceivingAttachmentsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListReceivedAttachmentsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 email_id,
                 limit=limit,
                 after=after_,
@@ -250,9 +248,11 @@ class EmailsReceivingAttachmentsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListReceivedAttachmentsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def get(
         self,
@@ -364,8 +364,8 @@ class InboxesThreadsEmailsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(after_: str | None, before_: str | None) -> tuple[list[InboxThreadEmail], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 inbox_id,
                 thread_id,
                 limit=limit,
@@ -375,9 +375,8 @@ class InboxesThreadsEmailsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast("Iterator[InboxThreadEmail]", paginate(fetch, after=after, before=before))
 
     def get(
         self,
@@ -992,10 +991,8 @@ class EmailsReceivingResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListReceivedEmailsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 wait=wait,
                 since=since,
@@ -1011,9 +1008,11 @@ class EmailsReceivingResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListReceivedEmailsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def get(
         self,
@@ -1217,10 +1216,8 @@ class InboxesDraftsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListInboxDraftsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 inbox_id,
                 limit=limit,
                 after=after_,
@@ -1228,9 +1225,10 @@ class InboxesDraftsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListInboxDraftsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def get(
         self,
@@ -1584,10 +1582,8 @@ class InboxesQuarantineResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListQuarantinedEmailsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 inbox_id,
                 limit=limit,
                 after=after_,
@@ -1595,9 +1591,11 @@ class InboxesQuarantineResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListQuarantinedEmailsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def release(
         self,
@@ -1783,10 +1781,8 @@ class InboxesThreadsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[SearchInboxThreadsResponseDataItem], bool]:
-            page = self.search(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.search(
                 inbox_id,
                 limit=limit,
                 folders=folders,
@@ -1806,9 +1802,11 @@ class InboxesThreadsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[SearchInboxThreadsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def list(
         self,
@@ -1871,10 +1869,8 @@ class InboxesThreadsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListInboxThreadsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 inbox_id,
                 limit=limit,
                 folders=folders,
@@ -1886,9 +1882,11 @@ class InboxesThreadsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListInboxThreadsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def get(
         self,
@@ -2014,10 +2012,8 @@ class SegmentsContactsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListContactsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 id,
                 limit=limit,
                 include=include,
@@ -2026,9 +2022,10 @@ class SegmentsContactsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListContactsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
 
 class SuppressionsBatchResource:
@@ -2228,19 +2225,18 @@ class ApiKeysResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListApiKeysResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListApiKeysResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def delete(
         self,
@@ -2340,19 +2336,18 @@ class BroadcastsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListBroadcastsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListBroadcastsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def get(
         self,
@@ -2544,19 +2539,19 @@ class ContactPropertiesResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListContactPropertiesResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListContactPropertiesResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def get(
         self,
@@ -2690,10 +2685,8 @@ class ContactsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListContactsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 include=include,
                 after=after_,
@@ -2701,9 +2694,10 @@ class ContactsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListContactsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def get(
         self,
@@ -2890,19 +2884,18 @@ class DomainsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListDomainsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListDomainsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def get(
         self,
@@ -3121,19 +3114,18 @@ class EmailsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListEmailsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListEmailsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def batch(
         self,
@@ -3345,10 +3337,8 @@ class InboxesResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListInboxesResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 kind=kind,
                 after=after_,
@@ -3356,9 +3346,10 @@ class InboxesResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListInboxesResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def get(
         self,
@@ -3534,19 +3525,18 @@ class SegmentsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListSegmentsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListSegmentsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def get(
         self,
@@ -3678,10 +3668,8 @@ class SuppressionsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListSuppressionsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 origin=origin,
                 after=after_,
@@ -3689,9 +3677,11 @@ class SuppressionsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListSuppressionsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def get(
         self,
@@ -3799,19 +3789,18 @@ class TemplatesResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListTemplatesResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListTemplatesResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def get(
         self,
@@ -4064,10 +4053,8 @@ class UnsubscribesResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListUnsubscribesResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 domain_id=domain_id,
                 after=after_,
@@ -4075,9 +4062,11 @@ class UnsubscribesResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListUnsubscribesResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def create(
         self,
@@ -4257,19 +4246,19 @@ class VerificationsResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListVerificationsResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListVerificationsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def get(
         self,
@@ -4358,19 +4347,18 @@ class WebhooksResource:
         ``before`` instead to walk the other way.
         """
 
-        def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListWebhooksResponseDataItem], bool]:
-            page = self.list(
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return paginate(fetch, after=after, before=before)
+        return cast(
+            "Iterator[ListWebhooksResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def get(
         self,

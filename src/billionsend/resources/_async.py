@@ -239,10 +239,8 @@ class AsyncEmailsReceivingAttachmentsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListReceivedAttachmentsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 email_id,
                 limit=limit,
                 after=after_,
@@ -250,9 +248,11 @@ class AsyncEmailsReceivingAttachmentsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListReceivedAttachmentsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -364,10 +364,8 @@ class AsyncInboxesThreadsEmailsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[InboxThreadEmail], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 inbox_id,
                 thread_id,
                 limit=limit,
@@ -377,9 +375,8 @@ class AsyncInboxesThreadsEmailsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast("AsyncIterator[InboxThreadEmail]", apaginate(fetch, after=after, before=before))
 
     async def get(
         self,
@@ -994,10 +991,8 @@ class AsyncEmailsReceivingResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListReceivedEmailsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 wait=wait,
                 since=since,
@@ -1013,9 +1008,11 @@ class AsyncEmailsReceivingResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListReceivedEmailsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -1219,10 +1216,8 @@ class AsyncInboxesDraftsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListInboxDraftsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 inbox_id,
                 limit=limit,
                 after=after_,
@@ -1230,9 +1225,11 @@ class AsyncInboxesDraftsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListInboxDraftsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -1586,10 +1583,8 @@ class AsyncInboxesQuarantineResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListQuarantinedEmailsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 inbox_id,
                 limit=limit,
                 after=after_,
@@ -1597,9 +1592,11 @@ class AsyncInboxesQuarantineResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListQuarantinedEmailsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def release(
         self,
@@ -1785,10 +1782,8 @@ class AsyncInboxesThreadsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[SearchInboxThreadsResponseDataItem], bool]:
-            page = await self.search(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.search(
                 inbox_id,
                 limit=limit,
                 folders=folders,
@@ -1808,9 +1803,11 @@ class AsyncInboxesThreadsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[SearchInboxThreadsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def list(
         self,
@@ -1873,10 +1870,8 @@ class AsyncInboxesThreadsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListInboxThreadsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 inbox_id,
                 limit=limit,
                 folders=folders,
@@ -1888,9 +1883,11 @@ class AsyncInboxesThreadsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListInboxThreadsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -2016,10 +2013,8 @@ class AsyncSegmentsContactsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListContactsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 id,
                 limit=limit,
                 include=include,
@@ -2028,9 +2023,11 @@ class AsyncSegmentsContactsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListContactsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
 
 class AsyncSuppressionsBatchResource:
@@ -2230,19 +2227,19 @@ class AsyncApiKeysResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListApiKeysResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListApiKeysResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def delete(
         self,
@@ -2342,19 +2339,19 @@ class AsyncBroadcastsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListBroadcastsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListBroadcastsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -2546,19 +2543,19 @@ class AsyncContactPropertiesResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListContactPropertiesResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListContactPropertiesResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -2692,10 +2689,8 @@ class AsyncContactsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListContactsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 include=include,
                 after=after_,
@@ -2703,9 +2698,11 @@ class AsyncContactsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListContactsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -2892,19 +2889,19 @@ class AsyncDomainsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListDomainsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListDomainsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -3123,19 +3120,19 @@ class AsyncEmailsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListEmailsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListEmailsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def batch(
         self,
@@ -3347,10 +3344,8 @@ class AsyncInboxesResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListInboxesResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 kind=kind,
                 after=after_,
@@ -3358,9 +3353,11 @@ class AsyncInboxesResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListInboxesResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -3536,19 +3533,19 @@ class AsyncSegmentsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListSegmentsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListSegmentsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -3680,10 +3677,8 @@ class AsyncSuppressionsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListSuppressionsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 origin=origin,
                 after=after_,
@@ -3691,9 +3686,11 @@ class AsyncSuppressionsResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListSuppressionsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -3801,19 +3798,19 @@ class AsyncTemplatesResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListTemplatesResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListTemplatesResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -4066,10 +4063,8 @@ class AsyncUnsubscribesResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListUnsubscribesResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 domain_id=domain_id,
                 after=after_,
@@ -4077,9 +4072,11 @@ class AsyncUnsubscribesResource:
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListUnsubscribesResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def create(
         self,
@@ -4259,19 +4256,19 @@ class AsyncVerificationsResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListVerificationsResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListVerificationsResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,
@@ -4360,19 +4357,19 @@ class AsyncWebhooksResource:
         ``before`` instead to walk the other way.
         """
 
-        async def fetch(
-            after_: str | None, before_: str | None
-        ) -> tuple[list[ListWebhooksResponseDataItem], bool]:
-            page = await self.list(
+        async def fetch(after_: str | None, before_: str | None) -> object:
+            return await self.list(
                 limit=limit,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,
                 timeout=timeout,
             )
-            return page["data"], page["has_more"]
 
-        return apaginate(fetch, after=after, before=before)
+        return cast(
+            "AsyncIterator[ListWebhooksResponseDataItem]",
+            apaginate(fetch, after=after, before=before),
+        )
 
     async def get(
         self,

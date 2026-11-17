@@ -2,13 +2,40 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
-from billionsend import AsyncBillionSend, BillionSend
+import pytest
+
+from billionsend import AsyncBillionSend, BillionSend, BillionSendError
 
 from .contract import OPERATIONS, ContractMock, example
 
 IDS = [f"00000000-0000-4000-8000-{i:012d}" for i in range(1, 8)]
+
+
+JSON = {"content-type": "application/json"}
+
+
+def collect(items: Iterator[Any], seen: list[Any]) -> None:
+    for item in items:
+        seen.append(item.get("id"))
+
+
+async def acollect(items: AsyncIterator[Any], seen: list[Any]) -> None:
+    async for item in items:
+        seen.append(item.get("id"))
+
+
+def page_body(path: str, ids: list[str], has_more: bool) -> dict[str, Any]:
+    op = next(o for o in OPERATIONS if o.key == ("GET", path))
+    _, _, schema = op.success()
+    body: dict[str, Any] = example(schema)
+    template = body["data"][0]
+    body["data"] = [{**template, "id": i} for i in ids]
+    body["has_more"] = has_more
+    return body
 
 
 def page(mock: ContractMock, path: str, ids: list[str], has_more: bool) -> None:
@@ -99,3 +126,68 @@ def test_thread_emails_of_either_direction(client: BillionSend, mock: ContractMo
     seen = [e["id"] for e in client.inboxes.threads.emails.list_all("in_1", "th_1", limit=2)]
     assert seen == IDS[0:3]
     assert mock.calls[1].query == {"limit": ["2"], "after": [IDS[1]]}
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"object": "list", "has_more": False},
+        {"object": "list", "has_more": False, "data": None},
+        {"object": "list", "has_more": False, "data": {}},
+        [],
+        "list",
+    ],
+)
+def test_a_page_without_a_data_array_raises(
+    client: BillionSend, mock: ContractMock, body: Any
+) -> None:
+    mock.respond("GET", "/domains", content=json.dumps(body).encode(), headers=JSON)
+    with pytest.raises(BillionSendError) as info:
+        list(client.domains.list_all())
+    assert type(info.value) is BillionSendError
+    assert info.value.name == "application_error"
+    assert info.value.status_code is None
+    assert info.value.message == "The list page has no data array"
+    assert len(mock.calls) == 1
+
+
+@pytest.mark.parametrize("edge_id", [None, "", 42, {"id": "x"}])
+def test_more_pages_but_no_id_to_continue_from_raises_after_the_page(
+    client: BillionSend, mock: ContractMock, edge_id: Any
+) -> None:
+    body = page_body("/domains", IDS[0:2], True)
+    if edge_id is None:
+        del body["data"][-1]["id"]
+    else:
+        body["data"][-1]["id"] = edge_id
+    mock.respond("GET", "/domains", content=json.dumps(body).encode(), headers=JSON)
+    seen: list[Any] = []
+    with pytest.raises(BillionSendError) as info:
+        collect(client.domains.list_all(), seen)
+    assert seen[0] == IDS[0]
+    assert len(seen) == 2
+    assert info.value.message == "The last item of the list page has no id to continue from"
+    assert info.value.status_code is None
+    assert len(mock.calls) == 1
+
+
+def test_walking_backward_names_the_first_item(client: BillionSend, mock: ContractMock) -> None:
+    body = page_body("/emails", IDS[0:2], True)
+    body["data"][0]["id"] = ""
+    mock.respond("GET", "/emails", content=json.dumps(body).encode(), headers=JSON)
+    with pytest.raises(BillionSendError, match="The first item of the list page has no id"):
+        list(client.emails.list_all(before=IDS[6]))
+    assert len(mock.calls) == 1
+
+
+async def test_async_bad_pages_raise(async_client: AsyncBillionSend, mock: ContractMock) -> None:
+    mock.respond("GET", "/domains", content=b'{"has_more": true}', headers=JSON)
+    with pytest.raises(BillionSendError, match="The list page has no data array"):
+        await acollect(async_client.domains.list_all(), [])
+    body = page_body("/domains", IDS[0:2], True)
+    body["data"][-1]["id"] = ""
+    mock.respond("GET", "/domains", content=json.dumps(body).encode(), headers=JSON)
+    seen: list[Any] = []
+    with pytest.raises(BillionSendError, match="The last item of the list page has no id"):
+        await acollect(async_client.domains.list_all(), seen)
+    assert seen == [IDS[0], ""]
