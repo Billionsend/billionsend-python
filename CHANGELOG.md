@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.1 (2026-11-17)
 
 - Cursor iterators (`list_all`, `search_all`) raise `BillionSendError` (`application_error`, no status) "The list page has no data array" for a page without a `data` array, instead of a `KeyError`; a page with `has_more` whose edge item (the last one forward, the first one backward) has no non-empty string `id` hands out its items, then raises "The last (first) item of the list page has no id to continue from", instead of paging from a wrong cursor.
 - Event streams: a reconnect refused with a `retry-after` (a 429 for the stream cap, a 5xx) waits as it asks, in full up to a minute (it was cut to 30 seconds and read only on a 429); one asking for more than a minute raises that error at once.
