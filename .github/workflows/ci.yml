@@ -3,6 +3,8 @@ name: CI
 on:
   push:
   pull_request:
+  schedule:
+    - cron: "17 6 * * *"
 
 permissions:
   contents: read
@@ -25,6 +27,17 @@ jobs:
         run: uv run mypy
       - name: Generated code matches the OpenAPI snapshot
         run: uv run python scripts/generate.py --check
+
+  snapshot:
+    name: Snapshot matches the published API
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+      - name: Snapshot equals https://billionsend.com/docs/api.openapi.json
+        run: python3 scripts/sync_openapi.py --check
 
   test:
     name: Tests (Python ${{ matrix.python }})

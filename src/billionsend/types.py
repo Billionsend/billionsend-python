@@ -8,7 +8,7 @@ objects and request parameters are written as ``dict`` literals."""
 
 from __future__ import annotations
 
-from typing import Any, Literal, NotRequired, TypeAlias, TypedDict
+from typing import IO, Any, Literal, NotRequired, TypeAlias, TypedDict
 
 __all__ = [
     "AddContactSegmentResponse",
@@ -21,6 +21,13 @@ __all__ = [
     "AgentSignupResponse",
     "AgentSignupResponseClaim",
     "AgentSignupResponseLimits",
+    "AutomationConnection",
+    "AutomationIdResponse",
+    "AutomationIssue",
+    "AutomationMetricsResponse",
+    "AutomationMetricsResponseRuns",
+    "AutomationMetricsResponseStepsItem",
+    "AutomationStep",
     "BatchAddSuppressionsRequest",
     "BatchAddSuppressionsResponse",
     "BatchContactsRequest",
@@ -45,15 +52,29 @@ __all__ = [
     "BatchRemoveContactsResponse",
     "BatchRemoveSuppressionsRequest",
     "BatchRemoveSuppressionsResponse",
+    "BatchRemoveSuppressionsResponseNotRemovedItem",
     "BroadcastIdResponse",
+    "CancelAutomationRunResponse",
     "CancelBroadcastResponse",
     "CancelEmailResponse",
+    "ClaimDomainRequest",
+    "ClientEngagementResponse",
+    "ClientEngagementResponseDataItem",
     "ContactIdResponse",
+    "ContactImport",
+    "ContactImportCounts",
     "ContactPreferencesLinkResponse",
     "ContactPropertyIdResponse",
+    "CountryEngagementResponse",
+    "CountryEngagementResponseDataItem",
     "CreateApiKeyRequest",
     "CreateApiKeyResponse",
+    "CreateAutomationRequest",
+    "CreateAutomationRequestLayout",
+    "CreateAutomationRequestLayoutNodesValue",
     "CreateBroadcastRequest",
+    "CreateContactImportForm",
+    "CreateContactImportResponse",
     "CreateContactPropertyRequest",
     "CreateContactRequest",
     "CreateContactRequestSegmentsItem",
@@ -64,6 +85,8 @@ __all__ = [
     "CreateDomainResponseCapabilities",
     "CreateDomainResponseRecordsItem",
     "CreateDomainResponseUnsubscribePage",
+    "CreateEventRequest",
+    "CreateEventResponse",
     "CreateInboxDraftRequest",
     "CreateInboxDraftRequestAttachmentsItem",
     "CreateInboxLabelRequest",
@@ -78,12 +101,23 @@ __all__ = [
     "DeleteInboxDraftResponse",
     "DeleteReceivedEmailResponse",
     "DeliverabilityResponse",
+    "DomainClaim",
+    "DomainClaimRecord",
     "DuplicateBroadcastResponse",
     "EmailInsightsResponse",
     "EmailInsightsResponseChecksItem",
     "EmailsMetricsResponse",
     "EstimateVerificationRequest",
     "EstimateVerificationResponse",
+    "Event",
+    "FileUpload",
+    "GetAutomationResponse",
+    "GetAutomationResponseConnectionsItem",
+    "GetAutomationResponseLayout",
+    "GetAutomationResponseLayoutNodesValue",
+    "GetAutomationResponseStepsItem",
+    "GetAutomationRunResponse",
+    "GetAutomationRunResponseStepsItem",
     "GetBroadcastResponse",
     "GetContactPropertyResponse",
     "GetContactResponse",
@@ -95,6 +129,7 @@ __all__ = [
     "GetDomainResponseRecordsItem",
     "GetDomainResponseUnsubscribePage",
     "GetEmailResponse",
+    "GetLogResponse",
     "GetReceivedAttachmentResponse",
     "GetReceivedAttachmentTextResponse",
     "GetReceivedEmailResponse",
@@ -105,8 +140,10 @@ __all__ = [
     "GetReceivedEmailResponseRaw",
     "GetReceivedEmailResponseScreening",
     "GetSegmentResponse",
+    "GetSentAttachmentResponse",
     "GetSuppressionResponse",
     "GetTemplateResponse",
+    "GetWebhookEventResponse",
     "GetWebhookResponse",
     "Inbox",
     "InboxAgent",
@@ -133,10 +170,23 @@ __all__ = [
     "InboxThreadLabels",
     "InboxThreadLabelsDataItem",
     "InboxThreadLabelsItem",
+    "JsonText",
+    "LinkClicksResponse",
+    "LinkClicksResponseDataItem",
     "ListApiKeysResponse",
     "ListApiKeysResponseDataItem",
+    "ListAutomationRunsResponse",
+    "ListAutomationRunsResponseDataItem",
+    "ListAutomationsResponse",
+    "ListAutomationsResponseDataItem",
+    "ListBroadcastClickedLinksResponse",
+    "ListBroadcastClickedLinksResponseDataItem",
+    "ListBroadcastRecipientsResponse",
+    "ListBroadcastRecipientsResponseDataItem",
+    "ListBroadcastRecipientsResponseDataItemClickedLinksItem",
     "ListBroadcastsResponse",
     "ListBroadcastsResponseDataItem",
+    "ListContactImportsResponse",
     "ListContactPropertiesResponse",
     "ListContactPropertiesResponseDataItem",
     "ListContactTopicsResponse",
@@ -153,6 +203,8 @@ __all__ = [
     "ListDomainsResponseDataItemUnsubscribePage",
     "ListEmailsResponse",
     "ListEmailsResponseDataItem",
+    "ListEventsResponse",
+    "ListEventsResponseDataItem",
     "ListInboxDraftsResponse",
     "ListInboxDraftsResponseDataItem",
     "ListInboxDraftsResponseDataItemAttachmentsItem",
@@ -164,6 +216,9 @@ __all__ = [
     "ListInboxThreadsResponseDataItemLabelsItem",
     "ListInboxesResponse",
     "ListInboxesResponseDataItem",
+    "ListLogsResponse",
+    "ListLogsResponseDataItem",
+    "ListOAuthGrantsResponse",
     "ListQuarantinedEmailsResponse",
     "ListQuarantinedEmailsResponseDataItem",
     "ListReceivedAttachmentsResponse",
@@ -177,6 +232,8 @@ __all__ = [
     "ListReceivedEmailsResponseHeldItem",
     "ListSegmentsResponse",
     "ListSegmentsResponseDataItem",
+    "ListSentAttachmentsResponse",
+    "ListSentAttachmentsResponseDataItem",
     "ListSuppressionsResponse",
     "ListSuppressionsResponseDataItem",
     "ListTemplatesResponse",
@@ -187,8 +244,14 @@ __all__ = [
     "ListUnsubscribesResponseDataItem",
     "ListVerificationsResponse",
     "ListVerificationsResponseDataItem",
+    "ListWebhookEventAttemptsResponse",
+    "ListWebhookEventAttemptsResponseDataItem",
+    "ListWebhookEventsResponse",
+    "ListWebhookEventsResponseDataItem",
     "ListWebhooksResponse",
     "ListWebhooksResponseDataItem",
+    "OAuthGrant",
+    "OAuthGrantClient",
     "ReceivedEmailForwardRequest",
     "ReceivedEmailForwardRequestAttachmentsItem",
     "ReceivedEmailReplyRequest",
@@ -196,12 +259,14 @@ __all__ = [
     "ReceivedEmailSendResponse",
     "ReleaseQuarantinedRequest",
     "RemoveApiKeyResponse",
+    "RemoveAutomationResponse",
     "RemoveBroadcastResponse",
     "RemoveContactPropertyResponse",
     "RemoveContactResponse",
     "RemoveContactSegmentResponse",
     "RemoveDomainResponse",
     "RemoveEmailResponse",
+    "RemoveEventResponse",
     "RemoveInboxLabelResponse",
     "RemoveInboxResponse",
     "RemoveInboxThreadResponse",
@@ -209,8 +274,9 @@ __all__ = [
     "RemoveSuppressionResponse",
     "RemoveTemplateResponse",
     "RemoveTopicResponse",
-    "RemoveUnsubscribeResponse",
     "RemoveWebhookResponse",
+    "ReplayWebhookEventResponse",
+    "RevokeOAuthGrantResponse",
     "RotateWebhookSecretRequest",
     "RotateWebhookSecretResponse",
     "SearchInboxThreadsResponse",
@@ -227,16 +293,39 @@ __all__ = [
     "SendEmailRequestAttachmentsItem",
     "SendEmailRequestTagsItem",
     "SendEmailResponse",
+    "SendEventRequest",
+    "SendEventResponse",
     "SendInboxDraftRequest",
+    "SendTemplate",
     "SetInboxThreadLabelsRequest",
+    "ShareEmailRequest",
+    "ShareEmailResponse",
+    "SimulateAutomationRequest",
+    "SimulateAutomationRequestContact",
+    "SimulateAutomationRequestEventsItem",
+    "SimulateAutomationResponse",
+    "SimulateAutomationResponseContact",
+    "SimulateAutomationResponseEmailsItem",
+    "SimulateAutomationResponseStepsItem",
+    "SimulateAutomationResponseStepsItemError",
+    "SimulateAutomationResponseUnusedEventsItem",
     "StartVerificationRequest",
     "StartVerificationResponse",
     "StartVerificationResponseRunsItem",
+    "StopAutomationResponse",
     "SuppressionIdResponse",
     "TemplateIdResponse",
+    "TemplateVariable",
+    "TemplateVariableInput",
     "TopicIdResponse",
     "TopicResponse",
+    "UnshareEmailResponse",
     "UnsubscribeResponse",
+    "UpdateApiKeyRequest",
+    "UpdateApiKeyResponse",
+    "UpdateAutomationRequest",
+    "UpdateAutomationRequestLayout",
+    "UpdateAutomationRequestLayoutNodesValue",
     "UpdateBroadcastRequest",
     "UpdateContactPropertyRequest",
     "UpdateContactRequest",
@@ -248,6 +337,10 @@ __all__ = [
     "UpdateDomainRequestUnsubscribePage",
     "UpdateEmailRequest",
     "UpdateEmailResponse",
+    "UpdateEventRequest",
+    "UpdateEventResponse",
+    "UpdateInboxAgentRequest",
+    "UpdateInboxAgentResponse",
     "UpdateInboxDraftRequest",
     "UpdateInboxDraftRequestAttachmentsItem",
     "UpdateInboxLabelRequest",
@@ -258,11 +351,21 @@ __all__ = [
     "UpdateTopicRequest",
     "UpdateWebhookRequest",
     "UsageResponse",
-    "UsageResponseLimits",
-    "UsageResponsePeriod",
-    "UsageResponseTeam",
-    "UsageResponseToday",
+    "UsageResponseAiCredits",
+    "UsageResponseAutomationRuns",
+    "UsageResponseBroadcasts",
+    "UsageResponseContacts",
+    "UsageResponseDomains",
+    "UsageResponseEmails",
+    "UsageResponseEmailsDaily",
+    "UsageResponseEmailsMonthly",
+    "UsageResponseInboxes",
+    "UsageResponseRateLimit",
+    "UsageResponseSegments",
     "UsageResponseVerification",
+    "UsageResponseWebhookEndpoints",
+    "ValidateAutomationRequest",
+    "ValidateAutomationResponse",
     "VerificationAvailabilityResponse",
     "VerificationCode",
     "VerificationRun",
@@ -274,6 +377,18 @@ __all__ = [
 ]
 
 
+FileUpload: TypeAlias = (
+    bytes | IO[bytes] | tuple[str, bytes | IO[bytes]] | tuple[str, bytes | IO[bytes], str]
+)
+"""A file to upload: its content (``bytes`` or a binary file object), or a tuple of the
+file name and content, optionally followed by the content type."""
+
+
+JsonText: TypeAlias = str | dict[str, Any] | list[Any]
+"""A JSON-encoded field of a multipart form: a ``str`` is sent as it is, a ``dict`` or
+``list`` is encoded with ``json.dumps``."""
+
+
 class EmailsMetricsResponse(TypedDict):
     object: Literal["metrics"]
     start_date: str
@@ -283,6 +398,89 @@ class EmailsMetricsResponse(TypedDict):
     granularity: Literal["hourly", "daily", "weekly", "monthly"]
     totals: dict[str, float]
     data: NotRequired[list[dict[str, str | float | None]]]
+
+
+class LinkClicksResponseDataItem(TypedDict):
+    link: str
+    clicked: int
+    bot_clicked: int
+
+
+class LinkClicksResponse(TypedDict):
+    object: Literal["list"]
+    start_date: str
+    end_date: str
+    has_more: bool
+    data: list[LinkClicksResponseDataItem]
+
+
+class CountryEngagementResponseDataItem(TypedDict):
+    country: str
+    opened: int
+    unique_opened: int
+    bot_opened: int
+    clicked: int
+    unique_clicked: int
+    bot_clicked: int
+
+
+class CountryEngagementResponse(TypedDict):
+    object: Literal["list"]
+    start_date: str
+    end_date: str
+    has_more: bool
+    data: list[CountryEngagementResponseDataItem]
+
+
+class ClientEngagementResponseDataItem(TypedDict):
+    client: Literal["gmail", "apple_mail", "outlook", "yahoo", "thunderbird", "other", "unknown"]
+    opened: int
+    unique_opened: int
+    bot_opened: int
+
+
+class ClientEngagementResponse(TypedDict):
+    object: Literal["list"]
+    start_date: str
+    end_date: str
+    has_more: bool
+    data: list[ClientEngagementResponseDataItem]
+
+
+class CreateContactImportForm(TypedDict):
+    file: NotRequired[FileUpload]
+    column_map: NotRequired[JsonText]
+    on_conflict: NotRequired[Literal["upsert", "skip"]]
+    segments: NotRequired[JsonText]
+    topics: NotRequired[JsonText]
+
+
+class CreateContactImportResponse(TypedDict):
+    object: Literal["contact_import"]
+    id: str
+
+
+class ContactImportCounts(TypedDict):
+    total: int
+    created: int
+    updated: int
+    skipped: int
+    failed: int
+
+
+class ContactImport(TypedDict):
+    object: Literal["contact_import"]
+    id: str
+    status: Literal["queued", "in_progress", "completed", "failed"]
+    created_at: str
+    completed_at: str | None
+    counts: ContactImportCounts
+
+
+class ListContactImportsResponse(TypedDict):
+    object: Literal["list"]
+    has_more: bool
+    data: list[ContactImport]
 
 
 class CreateContactRequestSegmentsItem(TypedDict):
@@ -343,7 +541,7 @@ class ListContactsResponseDataItem(TypedDict):
     unsubscribed: bool
     unsubscribed_domains: list[ListContactsResponseDataItemUnsubscribedDomainsItem]
     verification_status: (
-        Literal["valid", "invalid", "risky", "catchall", "role", "disposable", "unknown"] | None
+        Literal["valid", "invalid", "risky", "catchall", "role", "disposable"] | None
     )
     verified_at: str | None
     properties: NotRequired[
@@ -406,7 +604,7 @@ class BatchGetContactsResponseDataItem(TypedDict):
     unsubscribed: bool
     unsubscribed_domains: list[BatchGetContactsResponseDataItemUnsubscribedDomainsItem]
     verification_status: (
-        Literal["valid", "invalid", "risky", "catchall", "role", "disposable", "unknown"] | None
+        Literal["valid", "invalid", "risky", "catchall", "role", "disposable"] | None
     )
     verified_at: str | None
     properties: NotRequired[
@@ -506,7 +704,7 @@ class GetContactResponse(TypedDict):
     unsubscribed: bool
     unsubscribed_domains: list[GetContactResponseUnsubscribedDomainsItem]
     verification_status: (
-        Literal["valid", "invalid", "risky", "catchall", "role", "disposable", "unknown"] | None
+        Literal["valid", "invalid", "risky", "catchall", "role", "disposable"] | None
     )
     verified_at: str | None
     object: Literal["contact"]
@@ -553,6 +751,32 @@ UpdateContactTopicsRequest: TypeAlias = list[UpdateContactTopicsRequestItem]
 
 class UpdateContactTopicsResponse(TypedDict):
     id: str
+
+
+class SegmentFilterConditionsItem(TypedDict):
+    field: str
+    op: str
+    value: str | None
+
+
+class SegmentFilter(TypedDict):
+    match: Literal["all", "any"]
+    conditions: list[SegmentFilterConditionsItem]
+
+
+class ListSegmentsResponseDataItem(TypedDict):
+    object: Literal["segment"]
+    id: str
+    name: str
+    domain_id: str | None
+    filter: SegmentFilter
+    created_at: str
+
+
+class ListSegmentsResponse(TypedDict):
+    object: Literal["list"]
+    data: list[ListSegmentsResponseDataItem]
+    has_more: bool
 
 
 class AddContactSegmentResponse(TypedDict):
@@ -609,17 +833,6 @@ class RemoveContactPropertyResponse(TypedDict):
     deleted: Literal[True]
 
 
-class SegmentFilterConditionsItem(TypedDict):
-    field: str
-    op: str
-    value: str | None
-
-
-class SegmentFilter(TypedDict):
-    match: Literal["all", "any"]
-    conditions: list[SegmentFilterConditionsItem]
-
-
 class CreateSegmentRequest(TypedDict):
     name: str
     domain_id: NotRequired[str | None]
@@ -633,21 +846,6 @@ class SegmentResponse(TypedDict):
     domain_id: str | None
     filter: SegmentFilter
     created_at: str
-
-
-class ListSegmentsResponseDataItem(TypedDict):
-    object: Literal["segment"]
-    id: str
-    name: str
-    domain_id: str | None
-    filter: SegmentFilter
-    created_at: str
-
-
-class ListSegmentsResponse(TypedDict):
-    object: Literal["list"]
-    data: list[ListSegmentsResponseDataItem]
-    has_more: bool
 
 
 class GetSegmentResponse(TypedDict):
@@ -672,17 +870,30 @@ class RemoveSegmentResponse(TypedDict):
     deleted: Literal[True]
 
 
+class SendTemplate(TypedDict):
+    """BillionSend extension: build the broadcast from a template's newest published
+    version, as `POST /emails` does. The content is copied in when the broadcast is
+    created, with the variables filled in; later edits of the template do not change the
+    broadcast. Contact merge fields such as {{{FIRST_NAME|there}}} stay in the content
+    and are filled per recipient when it is sent
+    """
+
+    id: str
+    variables: NotRequired[dict[str, str | float]]
+
+
 CreateBroadcastRequest = TypedDict(
     "CreateBroadcastRequest",
     {
         "name": NotRequired[str],
         "segment_id": NotRequired[str],
-        "from": str,
-        "subject": str,
+        "from": NotRequired[str],
+        "subject": NotRequired[str],
         "html": NotRequired[str],
         "text": NotRequired[str],
         "reply_to": NotRequired[str | list[str]],
         "preview_text": NotRequired[str],
+        "template": NotRequired[SendTemplate],
         "topic_id": NotRequired[str | None],
         "send": NotRequired[bool],
         "scheduled_at": NotRequired[str],
@@ -792,6 +1003,39 @@ class RemoveBroadcastResponse(TypedDict):
     object: Literal["broadcast"]
     id: str
     deleted: Literal[True]
+
+
+class ListBroadcastRecipientsResponseDataItemClickedLinksItem(TypedDict):
+    url: str
+    clicks: int
+
+
+class ListBroadcastRecipientsResponseDataItem(TypedDict):
+    id: str
+    contact_id: str | None
+    email: str
+    count: NotRequired[int]
+    clicked_links: NotRequired[list[ListBroadcastRecipientsResponseDataItemClickedLinksItem]]
+    bounce_type: NotRequired[Literal["permanent", "transient", "undetermined"]]
+
+
+class ListBroadcastRecipientsResponse(TypedDict):
+    object: Literal["list"]
+    data: list[ListBroadcastRecipientsResponseDataItem]
+    has_more: bool
+
+
+class ListBroadcastClickedLinksResponseDataItem(TypedDict):
+    id: str
+    url: str
+    clicks: int
+    unique_clicks: int
+
+
+class ListBroadcastClickedLinksResponse(TypedDict):
+    object: Literal["list"]
+    data: list[ListBroadcastClickedLinksResponseDataItem]
+    has_more: bool
 
 
 class SendBroadcastRequest(TypedDict):
@@ -921,6 +1165,7 @@ class CreateDomainResponse(TypedDict):
     region: str
     open_tracking: bool
     click_tracking: bool
+    send_transactional_to_unsubscribed: bool
     tracking_subdomain: str | None
     tracking_status: Literal["pending", "active", "failed"] | None
     tracking_error: str | None
@@ -932,7 +1177,7 @@ class CreateDomainResponse(TypedDict):
     receiving_catch_all: bool
     shared: bool
     sending_mode: NotRequired[Literal["open", "reply_only", "receive_only"]]
-    sending_mode_reason: NotRequired[Literal["plan", "instance"] | None]
+    sending_mode_reason: NotRequired[Literal["plan", "platform"] | None]
     records: list[CreateDomainResponseRecordsItem]
 
 
@@ -965,6 +1210,7 @@ class ListDomainsResponseDataItem(TypedDict):
     region: str
     open_tracking: bool
     click_tracking: bool
+    send_transactional_to_unsubscribed: bool
     tracking_subdomain: str | None
     tracking_status: Literal["pending", "active", "failed"] | None
     tracking_error: str | None
@@ -976,7 +1222,7 @@ class ListDomainsResponseDataItem(TypedDict):
     receiving_catch_all: bool
     shared: bool
     sending_mode: NotRequired[Literal["open", "reply_only", "receive_only"]]
-    sending_mode_reason: NotRequired[Literal["plan", "instance"] | None]
+    sending_mode_reason: NotRequired[Literal["plan", "platform"] | None]
 
 
 class ListDomainsResponse(TypedDict):
@@ -1028,6 +1274,7 @@ class GetDomainResponse(TypedDict):
     region: str
     open_tracking: bool
     click_tracking: bool
+    send_transactional_to_unsubscribed: bool
     tracking_subdomain: str | None
     tracking_status: Literal["pending", "active", "failed"] | None
     tracking_error: str | None
@@ -1039,7 +1286,7 @@ class GetDomainResponse(TypedDict):
     receiving_catch_all: bool
     shared: bool
     sending_mode: NotRequired[Literal["open", "reply_only", "receive_only"]]
-    sending_mode_reason: NotRequired[Literal["plan", "instance"] | None]
+    sending_mode_reason: NotRequired[Literal["plan", "platform"] | None]
     object: Literal["domain"]
     records: list[GetDomainResponseRecordsItem]
 
@@ -1072,6 +1319,7 @@ class UpdateDomainRequest(TypedDict):
     open_tracking: NotRequired[bool]
     tracking_subdomain: NotRequired[str | None]
     unsubscribe_subdomain: NotRequired[str | None]
+    send_transactional_to_unsubscribed: NotRequired[bool]
     unsubscribe_page: NotRequired[UpdateDomainRequestUnsubscribePage]
     tls: NotRequired[Any]
     capabilities: NotRequired[UpdateDomainRequestCapabilities]
@@ -1082,6 +1330,40 @@ class RemoveDomainResponse(TypedDict):
     object: Literal["domain"]
     id: str
     deleted: Literal[True]
+
+
+class ClaimDomainRequest(TypedDict):
+    name: str
+    region: NotRequired[Literal["us-east-1", "eu-west-1", "sa-east-1", "ap-northeast-1"]]
+    custom_return_path: NotRequired[str]
+    open_tracking: NotRequired[bool]
+    click_tracking: NotRequired[bool]
+    tracking_subdomain: NotRequired[str]
+
+
+class DomainClaimRecord(TypedDict):
+    type: Literal["TXT"]
+    name: str
+    value: str
+    ttl: Literal["Auto"]
+
+
+class DomainClaim(TypedDict):
+    object: Literal["domain_claim"]
+    id: str
+    name: str
+    status: Literal[
+        "pending", "verified", "completed", "blocked", "expired", "superseded", "canceled", "failed"
+    ]
+    domain_id: str | None
+    region: str | None
+    record: DomainClaimRecord
+    blocked_reason: (
+        Literal["grace_period", "recent_owner_activity", "pending_scheduled_emails"] | None
+    )
+    failure_reason: str | None
+    created_at: str
+    expires_at: str
 
 
 class CreateApiKeyRequest(TypedDict):
@@ -1108,6 +1390,15 @@ class ListApiKeysResponse(TypedDict):
     object: Literal["list"]
     data: list[ListApiKeysResponseDataItem]
     has_more: bool
+
+
+class UpdateApiKeyRequest(TypedDict):
+    name: str
+
+
+class UpdateApiKeyResponse(TypedDict):
+    object: Literal["api_key"]
+    id: str
 
 
 class RemoveApiKeyResponse(TypedDict):
@@ -1140,18 +1431,25 @@ class CreateWebhookRequest(TypedDict):
             "contact.created",
             "contact.updated",
             "contact.deleted",
+            "contact.topics.updated",
             "contact.unsubscribed",
             "contact.resubscribed",
-            "contact.topic_opt_in",
-            "contact.topic_opt_out",
             "suppression.added",
             "suppression.removed",
+            "domain.created",
+            "domain.updated",
+            "domain.deleted",
+            "topic.created",
+            "topic.updated",
+            "topic.deleted",
             "inbox.created",
             "inbox.updated",
             "inbox.deleted",
             "inbox.expired",
             "inbox.thread.created",
             "inbox.thread.folder.updated",
+            "inbox.thread.assigned",
+            "inbox.thread.unassigned",
             "inbox.thread.labels.updated",
             "inbox.email.received",
             "inbox.email.sent",
@@ -1225,18 +1523,25 @@ class UpdateWebhookRequest(TypedDict):
                 "contact.created",
                 "contact.updated",
                 "contact.deleted",
+                "contact.topics.updated",
                 "contact.unsubscribed",
                 "contact.resubscribed",
-                "contact.topic_opt_in",
-                "contact.topic_opt_out",
                 "suppression.added",
                 "suppression.removed",
+                "domain.created",
+                "domain.updated",
+                "domain.deleted",
+                "topic.created",
+                "topic.updated",
+                "topic.deleted",
                 "inbox.created",
                 "inbox.updated",
                 "inbox.deleted",
                 "inbox.expired",
                 "inbox.thread.created",
                 "inbox.thread.folder.updated",
+                "inbox.thread.assigned",
+                "inbox.thread.unassigned",
                 "inbox.thread.labels.updated",
                 "inbox.email.received",
                 "inbox.email.sent",
@@ -1276,6 +1581,47 @@ class RotateWebhookSecretResponse(TypedDict):
     previous_secret_expires_at: str | None
 
 
+class ListWebhookEventsResponseDataItem(TypedDict):
+    id: str
+    type: str
+    created_at: str
+    status: Literal["success", "pending", "failed", "attempting"]
+
+
+class ListWebhookEventsResponse(TypedDict):
+    object: Literal["list"]
+    data: list[ListWebhookEventsResponseDataItem]
+    has_more: bool
+
+
+class GetWebhookEventResponse(TypedDict):
+    id: str
+    type: str
+    created_at: str
+    status: Literal["success", "pending", "failed", "attempting"]
+    object: Literal["webhook_event"]
+    next_attempt_at: str | None
+    payload: dict[str, Any]
+
+
+class ReplayWebhookEventResponse(TypedDict):
+    object: Literal["webhook_event"]
+    id: str
+
+
+class ListWebhookEventAttemptsResponseDataItem(TypedDict):
+    id: str
+    http_status_code: int
+    response: str
+    sent_at: str
+
+
+class ListWebhookEventAttemptsResponse(TypedDict):
+    object: Literal["list"]
+    data: list[ListWebhookEventAttemptsResponseDataItem]
+    has_more: bool
+
+
 class BatchAddSuppressionsRequest(TypedDict):
     emails: list[str]
     origin: NotRequired[Literal["bounce", "complaint", "manual"]]
@@ -1301,8 +1647,16 @@ class RemoveSuppressionResponse(TypedDict):
     deleted: Literal[True]
 
 
+class BatchRemoveSuppressionsResponseNotRemovedItem(TypedDict):
+    object: Literal["suppression"]
+    id: str
+    origin: Literal["bounce", "complaint", "manual"]
+    reason: Literal["permanent"]
+
+
 class BatchRemoveSuppressionsResponse(TypedDict):
     data: list[RemoveSuppressionResponse]
+    not_removed: list[BatchRemoveSuppressionsResponseNotRemovedItem]
 
 
 class CreateSuppressionRequest(TypedDict):
@@ -1361,10 +1715,10 @@ class UnsubscribeResponse(TypedDict):
     object: Literal["unsubscribe"]
 
 
-class RemoveUnsubscribeResponse(TypedDict):
-    object: Literal["unsubscribe"]
-    id: str
-    deleted: Literal[True]
+class TemplateVariableInput(TypedDict):
+    key: str
+    type: Literal["string", "number"]
+    fallback_value: NotRequired[str | float | None]
 
 
 CreateTemplateRequest = TypedDict(
@@ -1377,7 +1731,7 @@ CreateTemplateRequest = TypedDict(
         "alias": NotRequired[str | None],
         "from": NotRequired[str | None],
         "reply_to": NotRequired[str | list[str] | None],
-        "variables": NotRequired[list[Any]],
+        "variables": NotRequired[list[TemplateVariableInput]],
     },
 )
 
@@ -1403,6 +1757,14 @@ class ListTemplatesResponse(TypedDict):
     has_more: bool
 
 
+class TemplateVariable(TypedDict):
+    key: str
+    type: Literal["string", "number"]
+    fallback_value: str | float | None
+    created_at: str
+    updated_at: str
+
+
 GetTemplateResponse = TypedDict(
     "GetTemplateResponse",
     {
@@ -1415,12 +1777,12 @@ GetTemplateResponse = TypedDict(
         "updated_at": str,
         "object": Literal["template"],
         "current_version_id": str,
-        "from": None,
+        "from": str | None,
         "subject": str | None,
-        "reply_to": None,
+        "reply_to": list[str] | None,
         "html": str,
         "text": str | None,
-        "variables": list[Any],
+        "variables": list[TemplateVariable],
         "has_unpublished_versions": Literal[False],
     },
 )
@@ -1436,7 +1798,7 @@ UpdateTemplateRequest = TypedDict(
         "alias": NotRequired[str | None],
         "from": NotRequired[str | None],
         "reply_to": NotRequired[str | list[str] | None],
-        "variables": NotRequired[list[Any]],
+        "variables": NotRequired[list[TemplateVariableInput]],
     },
 )
 
@@ -1445,6 +1807,425 @@ class RemoveTemplateResponse(TypedDict):
     object: Literal["template"]
     id: str
     deleted: Literal[True]
+
+
+class CreateEventRequest(TypedDict):
+    name: str
+    schema: NotRequired[dict[str, Literal["string", "number", "boolean", "date"]] | None]
+
+
+class CreateEventResponse(TypedDict):
+    object: Literal["event"]
+    id: str
+
+
+class ListEventsResponseDataItem(TypedDict):
+    id: str
+    name: str
+    schema: dict[str, Literal["string", "number", "boolean", "date"]] | None
+    created_at: str
+    updated_at: str | None
+
+
+class ListEventsResponse(TypedDict):
+    object: Literal["list"]
+    has_more: bool
+    data: list[ListEventsResponseDataItem]
+
+
+class SendEventRequest(TypedDict):
+    event: str
+    contact_id: NotRequired[str]
+    email: NotRequired[str]
+    payload: NotRequired[dict[str, Any]]
+
+
+class SendEventResponse(TypedDict):
+    object: Literal["event"]
+    event: str
+
+
+class Event(TypedDict):
+    object: Literal["event"]
+    id: str
+    name: str
+    schema: dict[str, Literal["string", "number", "boolean", "date"]] | None
+    created_at: str
+    updated_at: str | None
+
+
+class UpdateEventRequest(TypedDict):
+    schema: dict[str, Literal["string", "number", "boolean", "date"]] | None
+
+
+class UpdateEventResponse(TypedDict):
+    object: Literal["event"]
+    id: str
+
+
+class RemoveEventResponse(TypedDict):
+    object: Literal["event"]
+    id: str
+    deleted: Literal[True]
+
+
+class AutomationStep(TypedDict):
+    key: str
+    type: Literal[
+        "trigger",
+        "delay",
+        "send_email",
+        "wait_for_event",
+        "condition",
+        "contact_update",
+        "contact_delete",
+        "add_to_segment",
+    ]
+    config: dict[str, Any]
+
+
+AutomationConnection = TypedDict(
+    "AutomationConnection",
+    {
+        "from": str,
+        "to": str,
+        "type": NotRequired[
+            Literal["default", "condition_met", "condition_not_met", "timeout", "event_received"]
+        ],
+    },
+)
+
+
+class CreateAutomationRequestLayoutNodesValue(TypedDict):
+    x: float
+    y: float
+
+
+class CreateAutomationRequestLayout(TypedDict):
+    """BillionSend extension: canvas coordinates, { nodes: { <step key>: { x, y } } },
+    saved with the steps and read back by GET. Not part of the automation's meaning;
+    give it together with steps.
+    """
+
+    nodes: dict[str, CreateAutomationRequestLayoutNodesValue]
+
+
+class CreateAutomationRequest(TypedDict):
+    name: str
+    status: NotRequired[Literal["enabled", "disabled"]]
+    steps: NotRequired[list[AutomationStep]]
+    connections: NotRequired[list[AutomationConnection]]
+    layout: NotRequired[CreateAutomationRequestLayout]
+
+
+class AutomationIdResponse(TypedDict):
+    object: Literal["automation"]
+    id: str
+
+
+class ListAutomationsResponseDataItem(TypedDict):
+    id: str
+    name: str
+    status: Literal["enabled", "disabled"]
+    created_at: str
+    updated_at: str | None
+
+
+class ListAutomationsResponse(TypedDict):
+    object: Literal["list"]
+    has_more: bool
+    data: list[ListAutomationsResponseDataItem]
+
+
+class GetAutomationResponseStepsItem(TypedDict):
+    key: str
+    type: Literal[
+        "trigger",
+        "delay",
+        "send_email",
+        "wait_for_event",
+        "condition",
+        "contact_update",
+        "contact_delete",
+        "add_to_segment",
+    ]
+    config: dict[str, Any]
+
+
+GetAutomationResponseConnectionsItem = TypedDict(
+    "GetAutomationResponseConnectionsItem",
+    {
+        "from": str,
+        "to": str,
+        "type": Literal[
+            "default", "condition_met", "condition_not_met", "timeout", "event_received"
+        ],
+    },
+)
+
+
+class GetAutomationResponseLayoutNodesValue(TypedDict):
+    x: float
+    y: float
+
+
+class GetAutomationResponseLayout(TypedDict):
+    """BillionSend extension: the canvas coordinates saved with the current version; absent
+    when the canvas saved none
+    """
+
+    nodes: dict[str, GetAutomationResponseLayoutNodesValue]
+
+
+class GetAutomationResponse(TypedDict):
+    object: Literal["automation"]
+    id: str
+    name: str
+    status: Literal["enabled", "disabled"]
+    created_at: str
+    updated_at: str | None
+    steps: list[GetAutomationResponseStepsItem]
+    connections: list[GetAutomationResponseConnectionsItem]
+    layout: NotRequired[GetAutomationResponseLayout]
+
+
+class UpdateAutomationRequestLayoutNodesValue(TypedDict):
+    x: float
+    y: float
+
+
+class UpdateAutomationRequestLayout(TypedDict):
+    """BillionSend extension: canvas coordinates, { nodes: { <step key>: { x, y } } },
+    saved with the steps and read back by GET. Not part of the automation's meaning;
+    give it together with steps.
+    """
+
+    nodes: dict[str, UpdateAutomationRequestLayoutNodesValue]
+
+
+class UpdateAutomationRequest(TypedDict):
+    name: NotRequired[str]
+    status: NotRequired[Literal["enabled", "disabled"]]
+    steps: NotRequired[list[AutomationStep]]
+    connections: NotRequired[list[AutomationConnection]]
+    layout: NotRequired[UpdateAutomationRequestLayout]
+
+
+class RemoveAutomationResponse(TypedDict):
+    object: Literal["automation"]
+    id: str
+    deleted: Literal[True]
+
+
+class StopAutomationResponse(TypedDict):
+    object: Literal["automation"]
+    id: str
+    status: Literal["disabled"]
+
+
+class ListAutomationRunsResponseDataItem(TypedDict):
+    id: str
+    status: Literal["running", "completed", "failed", "cancelled"]
+    started_at: str | None
+    completed_at: str | None
+    created_at: str
+
+
+class ListAutomationRunsResponse(TypedDict):
+    object: Literal["list"]
+    has_more: bool
+    data: list[ListAutomationRunsResponseDataItem]
+
+
+class GetAutomationRunResponseStepsItem(TypedDict):
+    key: str
+    type: Literal[
+        "trigger",
+        "delay",
+        "send_email",
+        "wait_for_event",
+        "condition",
+        "contact_update",
+        "contact_delete",
+        "add_to_segment",
+    ]
+    status: Literal["pending", "running", "completed", "failed", "skipped", "waiting"]
+    output: dict[str, Any] | None
+    error: dict[str, Any] | None
+    started_at: str | None
+    completed_at: str | None
+    created_at: str
+
+
+class GetAutomationRunResponse(TypedDict):
+    object: Literal["automation_run"]
+    id: str
+    status: Literal["running", "completed", "failed", "cancelled"]
+    started_at: str | None
+    completed_at: str | None
+    created_at: str
+    steps: list[GetAutomationRunResponseStepsItem]
+
+
+class ValidateAutomationRequest(TypedDict):
+    steps: list[Any]
+    connections: list[Any]
+
+
+class AutomationIssue(TypedDict):
+    layer: Literal["draft", "enable"]
+    path: str
+    code: str
+    message: str
+    suggestion: str
+
+
+class ValidateAutomationResponse(TypedDict):
+    object: Literal["automation_validation"]
+    valid: bool
+    can_enable: bool
+    issues: list[AutomationIssue]
+
+
+class SimulateAutomationRequestContact(TypedDict):
+    """The contact the run is for: a real one by id or email, with any of the other fields
+    laid over it, or a made-up one (an email with no contact) to try a case.
+    """
+
+    id: NotRequired[str]
+    email: NotRequired[str]
+    first_name: NotRequired[str | None]
+    last_name: NotRequired[str | None]
+    unsubscribed: NotRequired[bool]
+    properties: NotRequired[dict[str, str]]
+
+
+class SimulateAutomationRequestEventsItem(TypedDict):
+    name: str
+    payload: NotRequired[dict[str, Any]]
+    after: NotRequired[str]
+
+
+class SimulateAutomationRequest(TypedDict):
+    contact: SimulateAutomationRequestContact
+    payload: NotRequired[dict[str, Any]]
+    events: NotRequired[list[SimulateAutomationRequestEventsItem]]
+    start_at: NotRequired[str]
+
+
+class SimulateAutomationResponseContact(TypedDict):
+    id: str | None
+    existing: bool
+    email: str
+    first_name: str | None
+    last_name: str | None
+    unsubscribed: bool
+    properties: dict[str, str]
+
+
+class SimulateAutomationResponseStepsItemError(TypedDict):
+    code: str
+    message: str
+    details: NotRequired[dict[str, Any]]
+
+
+class SimulateAutomationResponseStepsItem(TypedDict):
+    key: str
+    type: Literal[
+        "trigger",
+        "delay",
+        "send_email",
+        "wait_for_event",
+        "condition",
+        "contact_update",
+        "contact_delete",
+        "add_to_segment",
+    ]
+    status: Literal["completed", "skipped", "failed"]
+    started_at: str
+    completed_at: str
+    outcome: (
+        Literal["default", "condition_met", "condition_not_met", "timeout", "event_received"] | None
+    )
+    next: str | None
+    output: dict[str, Any] | None
+    error: SimulateAutomationResponseStepsItemError | None
+
+
+SimulateAutomationResponseEmailsItem = TypedDict(
+    "SimulateAutomationResponseEmailsItem",
+    {
+        "step_key": str,
+        "at": str,
+        "to": str,
+        "from": str,
+        "subject": str | None,
+        "template_id": str,
+        "topic_id": str | None,
+        "variables": dict[str, Any],
+    },
+)
+
+
+class SimulateAutomationResponseUnusedEventsItem(TypedDict):
+    index: int
+    name: str
+    reason: str
+
+
+class SimulateAutomationResponse(TypedDict):
+    object: Literal["automation_simulation"]
+    status: Literal["completed", "failed"]
+    started_at: str
+    ended_at: str
+    contact: SimulateAutomationResponseContact
+    steps: list[SimulateAutomationResponseStepsItem]
+    emails: list[SimulateAutomationResponseEmailsItem]
+    unused_events: list[SimulateAutomationResponseUnusedEventsItem]
+
+
+class CancelAutomationRunResponse(TypedDict):
+    object: Literal["automation_run"]
+    id: str
+    status: Literal["cancelled"]
+
+
+class AutomationMetricsResponseRuns(TypedDict):
+    started: int
+    completed: int
+    failed: int
+    cancelled: int
+
+
+class AutomationMetricsResponseStepsItem(TypedDict):
+    key: str
+    type: (
+        Literal[
+            "trigger",
+            "delay",
+            "send_email",
+            "wait_for_event",
+            "condition",
+            "contact_update",
+            "contact_delete",
+            "add_to_segment",
+        ]
+        | None
+    )
+    entered: int
+    completed: int
+    failed: int
+    skipped: int
+
+
+class AutomationMetricsResponse(TypedDict):
+    object: Literal["automation_metrics"]
+    automation_id: str
+    start_date: str
+    end_date: str
+    runs: AutomationMetricsResponseRuns
+    emails: dict[str, int]
+    steps: list[AutomationMetricsResponseStepsItem]
 
 
 class VerificationAvailabilityResponse(TypedDict):
@@ -1549,33 +2330,95 @@ class VerificationRun(TypedDict):
     finished_at: str | None
 
 
-class UsageResponseLimits(TypedDict):
-    emails_per_day: int | None
-    emails_per_month: int | None
-    domains: int | None
-    contacts: int | None
-    inboxes: int | None
-    webhook_endpoints: int | None
+class UsageResponseEmailsDaily(TypedDict):
+    """The UTC day"""
 
-
-class UsageResponseToday(TypedDict):
-    emails_sent: int
+    used: int
+    limit: int | None
+    sent: int
+    received: int
     resets_at: str
 
 
-class UsageResponsePeriod(TypedDict):
-    """Billing-period usage on monthly plans; null on daily plans"""
+class UsageResponseEmailsMonthly(TypedDict):
+    """The billing period of a monthly plan; the UTC calendar month on Free and on the
+    system plan
+    """
 
-    emails_sent: int
-    included: int
-    overage_enabled: bool
-    overage_usd_per_1k: float
+    used: int
+    limit: int | None
+    sent: int
+    received: int
+    resets_at: str
     starts_at: str
-    ends_at: str
+    overage_enabled: bool
+    overage_usd_per_1k: float | None
+
+
+class UsageResponseEmails(TypedDict):
+    daily: UsageResponseEmailsDaily
+    monthly: UsageResponseEmailsMonthly
+
+
+class UsageResponseContacts(TypedDict):
+    used: int
+    limit: int | None
+
+
+class UsageResponseSegments(TypedDict):
+    used: int
+    limit: int | None
+
+
+class UsageResponseBroadcasts(TypedDict):
+    used: int
+    limit: None
+
+
+class UsageResponseAiCredits(TypedDict):
+    """BillionSend meters no AI credits: always used 0 and no limit"""
+
+    used: int
+    limit: int | None
+    next_increase_at: str | None
+
+
+class UsageResponseAutomationRuns(TypedDict):
+    """The automation runs created in the period `emails.monthly` counts. BillionSend does
+    not cap them: `limit` is always 9007199254740991 (Number.MAX_SAFE_INTEGER, the field
+    being a required number), which means no limit. The emails automations send count
+    against the plan's email quota as any email does
+    """
+
+    used: int
+    limit: int
+    resets_at: str
+
+
+class UsageResponseDomains(TypedDict):
+    used: int
+    limit: int | None
+
+
+class UsageResponseRateLimit(TypedDict):
+    """Every key shares a larger team-wide budget as well"""
+
+    limit: int
+    duration: str
+
+
+class UsageResponseInboxes(TypedDict):
+    used: int
+    limit: int | None
+
+
+class UsageResponseWebhookEndpoints(TypedDict):
+    used: int
+    limit: int | None
 
 
 class UsageResponseVerification(TypedDict):
-    """Deep verification of contacts this quota month (POST /verifications)"""
+    """BillionSend extension: deep verification of contacts this quota month"""
 
     verified: int
     from_grant: int
@@ -1584,20 +2427,75 @@ class UsageResponseVerification(TypedDict):
     price_per_1k_cents: int
 
 
-class UsageResponseTeam(TypedDict):
-    id: str
-    name: str
-
-
 class UsageResponse(TypedDict):
     object: Literal["usage"]
+    emails: UsageResponseEmails
+    contacts: UsageResponseContacts
+    segments: UsageResponseSegments
+    broadcasts: UsageResponseBroadcasts
+    ai_credits: UsageResponseAiCredits
+    automation_runs: UsageResponseAutomationRuns
+    domains: UsageResponseDomains
+    rate_limit: UsageResponseRateLimit
     plan: Literal["free", "starter", "pro", "scale"] | None
-    limits: UsageResponseLimits
-    today: UsageResponseToday
-    period: UsageResponsePeriod | None
+    inboxes: UsageResponseInboxes
+    webhook_endpoints: UsageResponseWebhookEndpoints
     verification: UsageResponseVerification
-    team: UsageResponseTeam
-    app_url: str | None
+
+
+class ListLogsResponseDataItem(TypedDict):
+    id: str
+    created_at: str
+    endpoint: str
+    method: str
+    response_status: int
+    user_agent: str | None
+
+
+class ListLogsResponse(TypedDict):
+    object: Literal["list"]
+    data: list[ListLogsResponseDataItem]
+    has_more: bool
+
+
+class GetLogResponse(TypedDict):
+    object: Literal["log"]
+    id: str
+    created_at: str
+    endpoint: str
+    method: str
+    response_status: int
+    user_agent: str | None
+    request_body: NotRequired[Any]
+    response_body: NotRequired[Any]
+
+
+class OAuthGrantClient(TypedDict):
+    name: str
+    logo_uri: str | None
+
+
+class OAuthGrant(TypedDict):
+    id: str
+    client_id: str
+    scopes: list[str]
+    created_at: str
+    revoked_at: str | None
+    revoked_reason: str | None
+    client: OAuthGrantClient
+
+
+class ListOAuthGrantsResponse(TypedDict):
+    object: Literal["list"]
+    data: list[OAuthGrant]
+    has_more: bool
+
+
+class RevokeOAuthGrantResponse(TypedDict):
+    object: Literal["oauth_grant"]
+    id: str
+    revoked_at: str
+    revoked_reason: str
 
 
 class InboxSafetyPatch(TypedDict):
@@ -1681,8 +2579,13 @@ class RemoveInboxResponse(TypedDict):
 
 class InboxAgent(TypedDict):
     object: Literal["inbox_agent"]
-    instructions: None
-    tone: None
+    instructions: str | None
+    tone: (
+        Literal[
+            "concise_professional", "concise_casual", "expanded_professional", "expanded_casual"
+        ]
+        | None
+    )
     actions: list[
         Literal[
             "draft_reply",
@@ -1694,6 +2597,34 @@ class InboxAgent(TypedDict):
             "move_to_trash",
         ]
     ]
+
+
+class UpdateInboxAgentRequest(TypedDict):
+    instructions: NotRequired[str | None]
+    tone: NotRequired[
+        Literal[
+            "concise_professional", "concise_casual", "expanded_professional", "expanded_casual"
+        ]
+        | None
+    ]
+    actions: NotRequired[
+        list[
+            Literal[
+                "draft_reply",
+                "forward_thread",
+                "add_labels",
+                "assign_thread",
+                "mark_as_spam",
+                "archive",
+                "move_to_trash",
+            ]
+        ]
+    ]
+
+
+class UpdateInboxAgentResponse(TypedDict):
+    object: Literal["inbox_agent"]
+    id: str
 
 
 class InboxSafety(TypedDict):
@@ -2345,9 +3276,9 @@ class SendEmailRequestAttachmentsItem(TypedDict):
 SendEmailRequest = TypedDict(
     "SendEmailRequest",
     {
-        "from": str,
+        "from": NotRequired[str],
         "to": str | list[str],
-        "subject": str,
+        "subject": NotRequired[str],
         "html": NotRequired[str],
         "text": NotRequired[str],
         "cc": NotRequired[str | list[str]],
@@ -2699,6 +3630,51 @@ class GetReceivedAttachmentTextResponse(TypedDict):
     flags: list[Literal["truncated", "hidden_text"]]
     pages: int | None
     text: str | None
+
+
+class ListSentAttachmentsResponseDataItem(TypedDict):
+    id: str
+    filename: NotRequired[str]
+    size: int
+    content_type: str
+    content_disposition: Literal["inline", "attachment"]
+    content_id: NotRequired[str]
+    download_url: str
+    expires_at: str
+
+
+class ListSentAttachmentsResponse(TypedDict):
+    object: Literal["list"]
+    has_more: bool
+    data: list[ListSentAttachmentsResponseDataItem]
+
+
+class GetSentAttachmentResponse(TypedDict):
+    id: str
+    filename: NotRequired[str]
+    size: int
+    content_type: str
+    content_disposition: Literal["inline", "attachment"]
+    content_id: NotRequired[str]
+    download_url: str
+    expires_at: str
+    object: Literal["attachment"]
+
+
+class ShareEmailRequest(TypedDict):
+    expires_in: NotRequired[str]
+
+
+class ShareEmailResponse(TypedDict):
+    object: Literal["email"]
+    id: str
+    url: str
+
+
+class UnshareEmailResponse(TypedDict):
+    object: Literal["email"]
+    id: str
+    revoked: int
 
 
 class EmailInsightsResponseChecksItem(TypedDict):

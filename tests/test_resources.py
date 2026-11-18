@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from email.parser import BytesParser
+from email.policy import HTTP
+
+import httpx
 
 from billionsend import AsyncBillionSend, BillionSend
 from billionsend.types import SendEmailRequest
@@ -145,9 +149,20 @@ def test_resources_reach_their_paths(client: BillionSend, mock: ContractMock) ->
         (lambda: client.topics.delete(ID), "DELETE", f"/topics/{ID}"),
         (lambda: client.broadcasts.duplicate(ID), "POST", f"/broadcasts/{ID}/duplicate"),
         (lambda: client.templates.publish(ID), "POST", f"/templates/{ID}/publish"),
-        (lambda: client.webhooks.rotate(ID), "POST", f"/webhooks/{ID}/rotate"),
+        (
+            lambda: client.webhooks.rotate_signing_secret(ID),
+            "POST",
+            f"/webhooks/{ID}/signing-secret/rotate",
+        ),
         (lambda: client.suppressions.get(ID), "GET", f"/suppressions/{ID}"),
-        (lambda: client.unsubscribes.delete(ID), "DELETE", f"/unsubscribes/{ID}"),
+        (lambda: client.emails.metrics(), "GET", "/emails/metrics"),
+        (lambda: client.emails.metrics.clients(), "GET", "/emails/metrics/clients"),
+        (lambda: client.contacts.imports.get(ID), "GET", f"/contacts/imports/{ID}"),
+        (lambda: client.domains.claims.verify(ID), "POST", f"/domains/{ID}/claim/verify"),
+        (lambda: client.events.get("order.paid"), "GET", "/events/order.paid"),
+        (lambda: client.events.remove("order.paid"), "DELETE", "/events/order.paid"),
+        (lambda: client.automations.runs.get(ID, ID2), "GET", f"/automations/{ID}/runs/{ID2}"),
+        (lambda: client.oauth_grants.revoke(ID), "DELETE", f"/oauth/grants/{ID}"),
         (lambda: client.verifications.availability(), "GET", "/verifications/availability"),
         (lambda: client.usage.get(), "GET", "/usage"),
         (lambda: client.deliverability.get(), "GET", "/deliverability"),
@@ -211,3 +226,84 @@ async def test_async_inbox_reply(async_client: AsyncBillionSend, mock: ContractM
     assert call.request.url.path == f"/inboxes/support@example.com/threads/{ID}/emails/{ID2}/reply"
     assert json.loads(call.request.content) == {"text": "Thanks!", "cc": ["c@example.com"]}
     assert call.request.headers["idempotency-key"] == "r1"
+
+
+def test_removed_operations_are_gone(client: BillionSend) -> None:
+    """The unsubscribe delete and the old webhook rotate left the API; the SDK has no trace."""
+    assert not hasattr(client.webhooks, "rotate")
+    assert not hasattr(client.unsubscribes, "delete")
+
+
+def test_usage_has_the_published_shape(client: BillionSend, mock: ContractMock) -> None:
+    from .contract import example
+
+    usage = example(
+        {"$ref": "#/components/schemas/UsageResponse"},
+    )
+    mock.respond("GET", "/usage", json_body=usage)
+    result = client.usage.get()
+    assert result["emails"]["daily"]["used"] == usage["emails"]["daily"]["used"]
+    assert "limit" in result["emails"]["monthly"]
+    assert "limits" not in result
+
+
+CSV = b"Email,First Name\nada@example.com,Ada\n"
+
+
+def _parts(request: httpx.Request) -> dict[str, tuple[str | None, str | None, bytes]]:
+    media = request.headers["content-type"]
+    message = BytesParser(policy=HTTP).parsebytes(
+        b"Content-Type: " + media.encode() + b"\r\n\r\n" + request.content
+    )
+    out: dict[str, tuple[str | None, str | None, bytes]] = {}
+    for part in message.iter_parts():
+        payload = part.get_payload(decode=True)
+        assert isinstance(payload, bytes)
+        out[str(part.get_param("name", header="content-disposition"))] = (
+            part.get_filename(),
+            part.get_content_type() if part.get_filename() else None,
+            payload,
+        )
+    return out
+
+
+def test_contact_import_is_a_multipart_upload(client: BillionSend, mock: ContractMock) -> None:
+    result = client.contacts.imports.create(
+        {
+            "file": ("contacts.csv", CSV, "text/csv"),
+            "column_map": {"email": "Email", "first_name": "First Name"},
+            "segments": [{"id": ID}],
+            "topics": json.dumps([{"id": ID2, "subscription": "opt_in"}]),
+            "on_conflict": "skip",
+        }
+    )
+    assert result
+    request = mock.last.request
+    assert request.headers["content-type"].startswith("multipart/form-data; boundary=")
+    parts = _parts(request)
+    assert parts["file"] == ("contacts.csv", "text/csv", CSV)
+    assert parts["on_conflict"][2] == b"skip"
+    # A dict or list is encoded by the SDK; a str goes out as it is.
+    assert json.loads(parts["column_map"][2]) == {"email": "Email", "first_name": "First Name"}
+    assert json.loads(parts["segments"][2]) == [{"id": ID}]
+    assert parts["topics"][2] == json.dumps([{"id": ID2, "subscription": "opt_in"}]).encode()
+
+
+def test_contact_import_takes_bytes_and_file_objects(
+    client: BillionSend, mock: ContractMock
+) -> None:
+    import io
+
+    client.contacts.imports.create({"file": CSV})
+    assert _parts(mock.last.request)["file"][2] == CSV
+    client.contacts.imports.create({"file": io.BytesIO(CSV)})
+    assert _parts(mock.last.request)["file"][2] == CSV
+
+
+async def test_async_contact_import(async_client: AsyncBillionSend, mock: ContractMock) -> None:
+    await async_client.contacts.imports.create(
+        {"file": ("c.csv", CSV), "column_map": {"email": "Email"}}
+    )
+    parts = _parts(mock.last.request)
+    assert parts["file"] == ("c.csv", "text/csv", CSV)
+    assert json.loads(parts["column_map"][2]) == {"email": "Email"}

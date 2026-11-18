@@ -22,6 +22,8 @@ import re
 from collections import deque
 from collections.abc import AsyncIterator, Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
+from email.parser import BytesParser
+from email.policy import HTTP
 from pathlib import Path
 from typing import Any
 from urllib.parse import unquote
@@ -361,11 +363,17 @@ class ContractMock:
         if request_body is None:
             assert not content, f"{where}: takes no request body"
         elif content:
-            assert request.headers.get("content-type", "").startswith("application/json"), (
-                f"{where}: body must be JSON"
-            )
-            body = json.loads(content)
-            schema = request_body["content"]["application/json"]["schema"]
+            media = request.headers.get("content-type", "")
+            if "multipart/form-data" in request_body["content"]:
+                assert media.startswith("multipart/form-data; boundary="), (
+                    f"{where}: body must be multipart/form-data with a boundary"
+                )
+                body = parse_multipart(media, content)
+                schema = request_body["content"]["multipart/form-data"]["schema"]
+            else:
+                assert media.startswith("application/json"), f"{where}: body must be JSON"
+                body = json.loads(content)
+                schema = request_body["content"]["application/json"]["schema"]
             validate(body, schema, f"{where} request body")
         else:
             assert request_body.get("required") is not True, f"{where}: request body missing"
@@ -402,6 +410,22 @@ class ContractMock:
         if schema is not None:
             validate(instance, schema, f"generated {op.method} {op.path} answer")
         return httpx.Response(status, json=instance)
+
+
+def parse_multipart(content_type: str, content: bytes) -> dict[str, Any]:
+    """The fields of a multipart body: a file as its content, anything else as text."""
+    message = BytesParser(policy=HTTP).parsebytes(
+        b"Content-Type: " + content_type.encode("ascii") + b"\r\n\r\n" + content
+    )
+    fields: dict[str, Any] = {}
+    for part in message.iter_parts():
+        name = part.get_param("name", header="content-disposition")
+        assert isinstance(name, str), "a multipart part without a name"
+        assert name not in fields, f"the multipart field {name} was sent twice"
+        payload = part.get_payload(decode=True)
+        assert isinstance(payload, bytes)
+        fields[name] = payload.decode("utf-8")
+    return fields
 
 
 def _coerce(values: list[str], param: Mapping[str, Any]) -> Any:

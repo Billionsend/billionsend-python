@@ -49,6 +49,15 @@ CALLS: dict[tuple[str, str], Call] = {
     ("GET", "/emails/receiving/{email_id}/attachments/{id}/text"): lambda c, b: (
         c.emails.receiving.attachments.text(ID, ID2)
     ),
+    ("GET", "/emails/{email_id}/attachments"): lambda c, b: c.emails.attachments.list(ID),
+    ("GET", "/emails/{email_id}/attachments/{id}"): lambda c, b: c.emails.attachments.get(ID, ID2),
+    ("POST", "/emails/{id}/share"): lambda c, b: c.emails.share(ID, b),
+    ("DELETE", "/emails/{id}/share"): lambda c, b: c.emails.unshare(ID),
+    ("GET", "/emails/metrics/links"): lambda c, b: c.emails.metrics.links(limit=5),
+    ("GET", "/emails/metrics/countries"): lambda c, b: c.emails.metrics.countries(domain_id=[ID]),
+    ("GET", "/emails/metrics/clients"): lambda c, b: c.emails.metrics.clients(
+        start_date="2026-01-01", end_date="2026-01-31"
+    ),
     # Domains
     ("POST", "/domains"): lambda c, b: c.domains.create(b),
     ("GET", "/domains"): lambda c, b: c.domains.list(),
@@ -56,10 +65,14 @@ CALLS: dict[tuple[str, str], Call] = {
     ("PATCH", "/domains/{id}"): lambda c, b: c.domains.update(ID, b),
     ("DELETE", "/domains/{id}"): lambda c, b: c.domains.delete(ID),
     ("POST", "/domains/{id}/verify"): lambda c, b: c.domains.verify(ID),
+    ("POST", "/domains/claim"): lambda c, b: c.domains.claims.create(b),
+    ("GET", "/domains/{id}/claim"): lambda c, b: c.domains.claims.get(ID),
+    ("POST", "/domains/{id}/claim/verify"): lambda c, b: c.domains.claims.verify(ID),
     # API keys
     ("POST", "/api-keys"): lambda c, b: c.api_keys.create(b),
     ("GET", "/api-keys"): lambda c, b: c.api_keys.list(),
     ("DELETE", "/api-keys/{id}"): lambda c, b: c.api_keys.delete(ID),
+    ("PATCH", "/api-keys/{id}"): lambda c, b: c.api_keys.update(ID, b),
     # Contacts
     ("POST", "/contacts"): lambda c, b: c.contacts.create(b),
     ("GET", "/contacts"): lambda c, b: c.contacts.list(),
@@ -78,6 +91,10 @@ CALLS: dict[tuple[str, str], Call] = {
     ("DELETE", "/contacts/{id}/segments/{segmentId}"): lambda c, b: c.contacts.segments.remove(
         ID, ID2
     ),
+    ("GET", "/contacts/{id}/segments"): lambda c, b: c.contacts.segments.list(ID, limit=5),
+    ("POST", "/contacts/imports"): lambda c, b: c.contacts.imports.create(b),
+    ("GET", "/contacts/imports"): lambda c, b: c.contacts.imports.list(status="completed"),
+    ("GET", "/contacts/imports/{id}"): lambda c, b: c.contacts.imports.get(ID),
     # Audiences
     ("POST", "/audiences/{audienceId}/contacts"): lambda c, b: c.audiences.contacts.create(ID, b),
     ("GET", "/audiences/{audienceId}/contacts/{id}"): lambda c, b: c.audiences.contacts.get(
@@ -117,6 +134,8 @@ CALLS: dict[tuple[str, str], Call] = {
     ("POST", "/broadcasts/{id}/send"): lambda c, b: c.broadcasts.send(ID, b),
     ("POST", "/broadcasts/{id}/duplicate"): lambda c, b: c.broadcasts.duplicate(ID),
     ("POST", "/broadcasts/{id}/cancel"): lambda c, b: c.broadcasts.cancel(ID),
+    ("GET", "/broadcasts/{id}/recipients"): lambda c, b: c.broadcasts.recipients(ID, type="sent"),
+    ("GET", "/broadcasts/{id}/clicked-links"): lambda c, b: c.broadcasts.clicked_links(ID),
     # Templates
     ("POST", "/templates"): lambda c, b: c.templates.create(b),
     ("GET", "/templates"): lambda c, b: c.templates.list(),
@@ -131,7 +150,17 @@ CALLS: dict[tuple[str, str], Call] = {
     ("GET", "/webhooks/{id}"): lambda c, b: c.webhooks.get(ID),
     ("PATCH", "/webhooks/{id}"): lambda c, b: c.webhooks.update(ID, b),
     ("DELETE", "/webhooks/{id}"): lambda c, b: c.webhooks.delete(ID),
-    ("POST", "/webhooks/{id}/rotate"): lambda c, b: c.webhooks.rotate(ID, b),
+    ("POST", "/webhooks/{id}/signing-secret/rotate"): lambda c, b: c.webhooks.rotate_signing_secret(
+        ID, b
+    ),
+    ("GET", "/webhooks/{id}/events"): lambda c, b: c.webhooks.events.list(ID),
+    ("GET", "/webhooks/{id}/events/{event_id}"): lambda c, b: c.webhooks.events.get(ID, ID2),
+    ("POST", "/webhooks/{id}/events/{event_id}/replay"): lambda c, b: c.webhooks.events.replay(
+        ID, ID2
+    ),
+    ("GET", "/webhooks/{id}/events/{event_id}/attempts"): lambda c, b: (
+        c.webhooks.events.attempts.list(ID, ID2)
+    ),
     # Suppressions
     ("POST", "/suppressions"): lambda c, b: c.suppressions.create(b),
     ("GET", "/suppressions"): lambda c, b: c.suppressions.list(origin="bounce"),
@@ -142,7 +171,6 @@ CALLS: dict[tuple[str, str], Call] = {
     # Unsubscribes
     ("POST", "/unsubscribes"): lambda c, b: c.unsubscribes.create(b),
     ("GET", "/unsubscribes"): lambda c, b: c.unsubscribes.list(domain_id=ID),
-    ("DELETE", "/unsubscribes/{id}"): lambda c, b: c.unsubscribes.delete(ID),
     # Verifications
     ("GET", "/verifications/availability"): lambda c, b: c.verifications.availability(),
     ("POST", "/verifications/estimate"): lambda c, b: c.verifications.estimate(b),
@@ -151,6 +179,33 @@ CALLS: dict[tuple[str, str], Call] = {
     ("GET", "/verifications/{id}"): lambda c, b: c.verifications.get(ID),
     # Usage and deliverability
     ("GET", "/usage"): lambda c, b: c.usage.get(),
+    ("GET", "/logs"): lambda c, b: c.logs.list(limit=5),
+    ("GET", "/logs/{id}"): lambda c, b: c.logs.get(ID),
+    ("GET", "/oauth/grants"): lambda c, b: c.oauth_grants.list(),
+    ("DELETE", "/oauth/grants/{id}"): lambda c, b: c.oauth_grants.revoke(ID),
+    # Custom events
+    ("POST", "/events"): lambda c, b: c.events.create(b),
+    ("GET", "/events"): lambda c, b: c.events.list(),
+    ("POST", "/events/send"): lambda c, b: c.events.send(b, idempotency_key="key-5"),
+    ("GET", "/events/{id_or_name}"): lambda c, b: c.events.get("order.paid"),
+    ("PATCH", "/events/{id_or_name}"): lambda c, b: c.events.update("order.paid", b),
+    ("DELETE", "/events/{id_or_name}"): lambda c, b: c.events.remove("order.paid"),
+    # Automations
+    ("POST", "/automations"): lambda c, b: c.automations.create(b),
+    ("GET", "/automations"): lambda c, b: c.automations.list(status="enabled"),
+    ("POST", "/automations/validate"): lambda c, b: c.automations.validate(b),
+    ("GET", "/automations/{id}"): lambda c, b: c.automations.get(ID),
+    ("PATCH", "/automations/{id}"): lambda c, b: c.automations.update(ID, b),
+    ("DELETE", "/automations/{id}"): lambda c, b: c.automations.remove(ID),
+    ("POST", "/automations/{id}/duplicate"): lambda c, b: c.automations.duplicate(ID),
+    ("POST", "/automations/{id}/stop"): lambda c, b: c.automations.stop(ID),
+    ("POST", "/automations/{id}/simulate"): lambda c, b: c.automations.simulate(ID, b),
+    ("GET", "/automations/{id}/metrics"): lambda c, b: c.automations.metrics(ID),
+    ("GET", "/automations/{id}/runs"): lambda c, b: c.automations.runs.list(ID, status="running"),
+    ("GET", "/automations/{id}/runs/{run_id}"): lambda c, b: c.automations.runs.get(ID, ID2),
+    ("POST", "/automations/{id}/runs/{run_id}/cancel"): lambda c, b: c.automations.runs.cancel(
+        ID, ID2
+    ),
     ("GET", "/deliverability"): lambda c, b: c.deliverability.get(),
     # Inboxes
     ("POST", "/inboxes"): lambda c, b: c.inboxes.create(b),
@@ -164,6 +219,7 @@ CALLS: dict[tuple[str, str], Call] = {
         INBOX, max_reconnects=0
     ),
     ("GET", "/inboxes/{inbox_id}/agent"): lambda c, b: c.inboxes.agent.get(INBOX),
+    ("PATCH", "/inboxes/{inbox_id}/agent"): lambda c, b: c.inboxes.agent.update(INBOX, b),
     ("GET", "/inboxes/{inbox_id}/safety"): lambda c, b: c.inboxes.safety.get(INBOX),
     ("PATCH", "/inboxes/{inbox_id}/safety"): lambda c, b: c.inboxes.safety.update(INBOX, b),
     ("GET", "/inboxes/{inbox_id}/labels"): lambda c, b: c.inboxes.labels.list(INBOX),
@@ -240,16 +296,29 @@ CALLS: dict[tuple[str, str], Call] = {
 ERROR_ONLY = {o.key for o in OPERATIONS if not o.has_success()}
 
 
+# Bodies of the multipart operations (the file, then the JSON-encoded text fields).
+FORMS: dict[tuple[str, str], Any] = {
+    ("POST", "/contacts/imports"): {
+        "file": ("contacts.csv", b"Email,First Name\nada@example.com,Ada\n"),
+        "column_map": json.dumps({"email": "Email", "first_name": "First Name"}),
+        "on_conflict": "skip",
+        "segments": json.dumps([{"id": ID}]),
+    }
+}
+
+
 def body_for(key: tuple[str, str]) -> Any:
     op = next(o for o in OPERATIONS if o.key == key)
     request_body = op.spec.get("requestBody")
     if request_body is None:
         return None
+    if "multipart/form-data" in request_body["content"]:
+        return FORMS[key]
     return example(request_body["content"]["application/json"]["schema"], full=False)
 
 
 def test_table_matches_the_contract() -> None:
-    assert len(OPERATION_KEYS) == 136
+    assert len(OPERATION_KEYS) == 180
     assert set(CALLS) == OPERATION_KEYS
 
 
@@ -316,7 +385,9 @@ def _public_methods(resource: Any, prefix: str) -> set[str]:
         if not name.startswith("_") and type(value).__name__.endswith("Resource"):
             names |= _public_methods(value, f"{prefix}.{name}")
     for name, _ in inspect.getmembers(type(resource), inspect.isfunction):
-        if not name.startswith("_"):
+        if name == "__call__":  # an operation named like its child resource (emails.metrics)
+            names.add(prefix)
+        elif not name.startswith("_"):
             names.add(f"{prefix}.{name}")
     return names
 
@@ -332,7 +403,7 @@ def test_sync_and_async_have_the_same_surface() -> None:
         async_methods |= _public_methods(getattr(async_, name), name)
     assert sync_methods == async_methods
     operations = {m for m in sync_methods if not m.endswith("_all")}
-    assert len(operations) == len(OPERATION_KEYS) == 136
+    assert len(operations) == len(OPERATION_KEYS) == 180
 
 
 def test_idempotency_key_where_the_contract_declares_it() -> None:
@@ -392,4 +463,4 @@ def test_every_cursor_list_has_an_iterator() -> None:
                 assert callable(getattr(method.__self__, method.__name__ + "_all", None)), op[
                     "operationId"
                 ]
-    assert len(lists) == 21
+    assert len(lists) == 33

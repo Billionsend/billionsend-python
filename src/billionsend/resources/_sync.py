@@ -19,6 +19,8 @@ from ..types import (
     AgentClaimEmail,
     AgentSignupRequest,
     AgentSignupResponse,
+    AutomationIdResponse,
+    AutomationMetricsResponse,
     BatchAddSuppressionsRequest,
     BatchAddSuppressionsResponse,
     BatchContactsRequest,
@@ -32,18 +34,28 @@ from ..types import (
     BatchRemoveSuppressionsRequest,
     BatchRemoveSuppressionsResponse,
     BroadcastIdResponse,
+    CancelAutomationRunResponse,
     CancelBroadcastResponse,
     CancelEmailResponse,
+    ClaimDomainRequest,
+    ClientEngagementResponse,
     ContactIdResponse,
+    ContactImport,
     ContactPreferencesLinkResponse,
     ContactPropertyIdResponse,
+    CountryEngagementResponse,
     CreateApiKeyRequest,
     CreateApiKeyResponse,
+    CreateAutomationRequest,
     CreateBroadcastRequest,
+    CreateContactImportForm,
+    CreateContactImportResponse,
     CreateContactPropertyRequest,
     CreateContactRequest,
     CreateDomainRequest,
     CreateDomainResponse,
+    CreateEventRequest,
+    CreateEventResponse,
     CreateInboxDraftRequest,
     CreateInboxLabelRequest,
     CreateInboxRequest,
@@ -57,22 +69,29 @@ from ..types import (
     DeleteInboxDraftResponse,
     DeleteReceivedEmailResponse,
     DeliverabilityResponse,
+    DomainClaim,
     DuplicateBroadcastResponse,
     EmailInsightsResponse,
     EmailsMetricsResponse,
     EstimateVerificationRequest,
     EstimateVerificationResponse,
+    Event,
+    GetAutomationResponse,
+    GetAutomationRunResponse,
     GetBroadcastResponse,
     GetContactPropertyResponse,
     GetContactResponse,
     GetDomainResponse,
     GetEmailResponse,
+    GetLogResponse,
     GetReceivedAttachmentResponse,
     GetReceivedAttachmentTextResponse,
     GetReceivedEmailResponse,
     GetSegmentResponse,
+    GetSentAttachmentResponse,
     GetSuppressionResponse,
     GetTemplateResponse,
+    GetWebhookEventResponse,
     GetWebhookResponse,
     Inbox,
     InboxAgent,
@@ -88,10 +107,20 @@ from ..types import (
     InboxThread,
     InboxThreadEmail,
     InboxThreadLabels,
+    LinkClicksResponse,
     ListApiKeysResponse,
     ListApiKeysResponseDataItem,
+    ListAutomationRunsResponse,
+    ListAutomationRunsResponseDataItem,
+    ListAutomationsResponse,
+    ListAutomationsResponseDataItem,
+    ListBroadcastClickedLinksResponse,
+    ListBroadcastClickedLinksResponseDataItem,
+    ListBroadcastRecipientsResponse,
+    ListBroadcastRecipientsResponseDataItem,
     ListBroadcastsResponse,
     ListBroadcastsResponseDataItem,
+    ListContactImportsResponse,
     ListContactPropertiesResponse,
     ListContactPropertiesResponseDataItem,
     ListContactsResponse,
@@ -101,6 +130,8 @@ from ..types import (
     ListDomainsResponseDataItem,
     ListEmailsResponse,
     ListEmailsResponseDataItem,
+    ListEventsResponse,
+    ListEventsResponseDataItem,
     ListInboxDraftsResponse,
     ListInboxDraftsResponseDataItem,
     ListInboxesResponse,
@@ -109,6 +140,9 @@ from ..types import (
     ListInboxThreadEmailsResponse,
     ListInboxThreadsResponse,
     ListInboxThreadsResponseDataItem,
+    ListLogsResponse,
+    ListLogsResponseDataItem,
+    ListOAuthGrantsResponse,
     ListQuarantinedEmailsResponse,
     ListQuarantinedEmailsResponseDataItem,
     ListReceivedAttachmentsResponse,
@@ -117,6 +151,8 @@ from ..types import (
     ListReceivedEmailsResponseDataItem,
     ListSegmentsResponse,
     ListSegmentsResponseDataItem,
+    ListSentAttachmentsResponse,
+    ListSentAttachmentsResponseDataItem,
     ListSuppressionsResponse,
     ListSuppressionsResponseDataItem,
     ListTemplatesResponse,
@@ -126,19 +162,26 @@ from ..types import (
     ListUnsubscribesResponseDataItem,
     ListVerificationsResponse,
     ListVerificationsResponseDataItem,
+    ListWebhookEventAttemptsResponse,
+    ListWebhookEventAttemptsResponseDataItem,
+    ListWebhookEventsResponse,
+    ListWebhookEventsResponseDataItem,
     ListWebhooksResponse,
     ListWebhooksResponseDataItem,
+    OAuthGrant,
     ReceivedEmailForwardRequest,
     ReceivedEmailReplyRequest,
     ReceivedEmailSendResponse,
     ReleaseQuarantinedRequest,
     RemoveApiKeyResponse,
+    RemoveAutomationResponse,
     RemoveBroadcastResponse,
     RemoveContactPropertyResponse,
     RemoveContactResponse,
     RemoveContactSegmentResponse,
     RemoveDomainResponse,
     RemoveEmailResponse,
+    RemoveEventResponse,
     RemoveInboxLabelResponse,
     RemoveInboxResponse,
     RemoveInboxThreadResponse,
@@ -146,8 +189,9 @@ from ..types import (
     RemoveSuppressionResponse,
     RemoveTemplateResponse,
     RemoveTopicResponse,
-    RemoveUnsubscribeResponse,
     RemoveWebhookResponse,
+    ReplayWebhookEventResponse,
+    RevokeOAuthGrantResponse,
     RotateWebhookSecretRequest,
     RotateWebhookSecretResponse,
     SearchInboxThreadsResponse,
@@ -157,15 +201,26 @@ from ..types import (
     SendBroadcastResponse,
     SendEmailRequest,
     SendEmailResponse,
+    SendEventRequest,
+    SendEventResponse,
     SendInboxDraftRequest,
     SetInboxThreadLabelsRequest,
+    ShareEmailRequest,
+    ShareEmailResponse,
+    SimulateAutomationRequest,
+    SimulateAutomationResponse,
     StartVerificationRequest,
     StartVerificationResponse,
+    StopAutomationResponse,
     SuppressionIdResponse,
     TemplateIdResponse,
     TopicIdResponse,
     TopicResponse,
+    UnshareEmailResponse,
     UnsubscribeResponse,
+    UpdateApiKeyRequest,
+    UpdateApiKeyResponse,
+    UpdateAutomationRequest,
     UpdateBroadcastRequest,
     UpdateContactPropertyRequest,
     UpdateContactRequest,
@@ -174,6 +229,10 @@ from ..types import (
     UpdateDomainRequest,
     UpdateEmailRequest,
     UpdateEmailResponse,
+    UpdateEventRequest,
+    UpdateEventResponse,
+    UpdateInboxAgentRequest,
+    UpdateInboxAgentResponse,
     UpdateInboxDraftRequest,
     UpdateInboxLabelRequest,
     UpdateInboxRequest,
@@ -183,6 +242,8 @@ from ..types import (
     UpdateTopicRequest,
     UpdateWebhookRequest,
     UsageResponse,
+    ValidateAutomationRequest,
+    ValidateAutomationResponse,
     VerificationAvailabilityResponse,
     VerificationCode,
     VerificationRun,
@@ -562,6 +623,74 @@ class InboxesThreadsLabelsResource:
         return cast("InboxThreadLabels", response)
 
 
+class WebhooksEventsAttemptsResource:
+    """Operations on webhooks events attempts."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def list(
+        self,
+        id: str,
+        event_id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListWebhookEventAttemptsResponse:
+        """List an event's delivery attempts.
+
+        Every post made for the event, newest first. Newest first, with cursor
+        pagination: `after` takes the last id of a page and pages toward older items,
+        `before` takes the first id and pages back toward newer ones.
+
+        ``GET /webhooks/{id}/events/{event_id}/attempts``
+        """
+        response = self._client.request(
+            "GET",
+            f"/webhooks/{encode_path(id)}/events/{encode_path(event_id)}/attempts",
+            query={"limit": limit, "after": after, "before": before},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListWebhookEventAttemptsResponse", response)
+
+    def list_all(
+        self,
+        id: str,
+        event_id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListWebhookEventAttemptsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                id,
+                event_id,
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListWebhookEventAttemptsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
+
+
 class AudiencesContactsResource:
     """Operations on audiences contacts."""
 
@@ -576,7 +705,7 @@ class AudiencesContactsResource:
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> ContactIdResponse:
-        """Create a contact.
+        """Create a contact in an audience.
 
         ``POST /audiences/{audienceId}/contacts``
         """
@@ -597,7 +726,7 @@ class AudiencesContactsResource:
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> GetContactResponse:
-        """Retrieve a contact.
+        """Retrieve a contact in an audience.
 
         ``GET /audiences/{audienceId}/contacts/{id}``
         """
@@ -618,7 +747,7 @@ class AudiencesContactsResource:
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> ContactIdResponse:
-        """Update a contact.
+        """Update a contact in an audience.
 
         ``PATCH /audiences/{audienceId}/contacts/{id}``
         """
@@ -640,7 +769,7 @@ class AudiencesContactsResource:
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> RemoveContactResponse:
-        """Delete a contact.
+        """Delete a contact from an audience.
 
         ``DELETE /audiences/{audienceId}/contacts/{id}``
         """
@@ -652,6 +781,123 @@ class AudiencesContactsResource:
             timeout=timeout,
         )
         return cast("RemoveContactResponse", response)
+
+
+class AutomationsRunsResource:
+    """Operations on automations runs."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def list(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        status: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListAutomationRunsResponse:
+        """List the runs of an automation.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones. status keeps runs in any of the comma-separated statuses (running,
+        completed, failed, cancelled).
+
+        ``GET /automations/{id}/runs``
+        """
+        response = self._client.request(
+            "GET",
+            f"/automations/{encode_path(id)}/runs",
+            query={"limit": limit, "after": after, "before": before, "status": status},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListAutomationRunsResponse", response)
+
+    def list_all(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        status: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListAutomationRunsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                id,
+                limit=limit,
+                status=status,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListAutomationRunsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
+
+    def get(
+        self,
+        id: str,
+        run_id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> GetAutomationRunResponse:
+        """Retrieve a run of an automation.
+
+        The run with every step of its automation's version: the steps that ran in the
+        order they ran, with their output and error, then the rest as pending (still
+        reachable) or skipped.
+
+        ``GET /automations/{id}/runs/{run_id}``
+        """
+        response = self._client.request(
+            "GET",
+            f"/automations/{encode_path(id)}/runs/{encode_path(run_id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("GetAutomationRunResponse", response)
+
+    def cancel(
+        self,
+        id: str,
+        run_id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> CancelAutomationRunResponse:
+        """Cancel a run of an automation.
+
+        BillionSend extension. Ends a running run as cancelled: its waiting step is
+        skipped and nothing more happens for it. Mail the run already queued is not
+        recalled. A run that is already completed, failed or cancelled answers 409.
+
+        ``POST /automations/{id}/runs/{run_id}/cancel``
+        """
+        response = self._client.request(
+            "POST",
+            f"/automations/{encode_path(id)}/runs/{encode_path(run_id)}/cancel",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("CancelAutomationRunResponse", response)
 
 
 class ContactsBatchResource:
@@ -692,7 +938,7 @@ class ContactsBatchResource:
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> BatchRemoveContactsResponse:
-        """Delete in bulk.
+        """Delete contacts in bulk.
 
         Deletes up to 1000 contacts by id or by email address in one request and lists
         the rows actually deleted; unknown ids or addresses are skipped. Emails stay in
@@ -719,7 +965,7 @@ class ContactsBatchResource:
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> BatchContactsResponse:
-        """Create in bulk.
+        """Create contacts in bulk.
 
         Creates up to 1000 contacts in one request. Each item is a CreateContactRequest.
         `on_conflict` decides what happens to an email that already belongs to a contact
@@ -745,11 +991,179 @@ class ContactsBatchResource:
         return cast("BatchContactsResponse", response)
 
 
+class ContactsImportsResource:
+    """Operations on contacts imports."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateContactImportForm,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> CreateContactImportResponse:
+        """Create a contact import.
+
+        Uploads a CSV (`multipart/form-data`; `column_map`, `segments` and `topics` are
+        JSON-encoded strings) and imports it in the background: poll Retrieve a contact
+        import for `status` and `counts`. A row with an invalid address, an address that
+        can never receive mail, or a value that does not fit its column type fails; with
+        the plan's contact cap reached, the rows that do not fit fail. A file that marks
+        a row unsubscribed only opts that contact out; an import never subscribes anyone
+        who unsubscribed. At most 5 imports can be queued or running per team.
+
+        ``POST /contacts/imports``
+        """
+        response = self._client.request(
+            "POST",
+            "/contacts/imports",
+            form=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("CreateContactImportResponse", response)
+
+    def list(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        status: Literal["queued", "in_progress", "completed", "failed"] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListContactImportsResponse:
+        """List contact imports.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones. Ten per page unless `limit` says otherwise; `status` filters.
+
+        ``GET /contacts/imports``
+        """
+        response = self._client.request(
+            "GET",
+            "/contacts/imports",
+            query={"limit": limit, "after": after, "before": before, "status": status},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListContactImportsResponse", response)
+
+    def list_all(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        status: Literal["queued", "in_progress", "completed", "failed"] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ContactImport]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                limit=limit,
+                status=status,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast("Iterator[ContactImport]", paginate(fetch, after=after, before=before))
+
+    def get(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ContactImport:
+        """Retrieve a contact import.
+
+        ``GET /contacts/imports/{id}``
+        """
+        response = self._client.request(
+            "GET",
+            f"/contacts/imports/{encode_path(id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ContactImport", response)
+
+
 class ContactsSegmentsResource:
     """Operations on contacts segments."""
 
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
+
+    def list(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListSegmentsResponse:
+        """List contact segments.
+
+        The segments the contact is in: an explicit member row, or a match of the
+        segment's saved filter (the rule `GET /segments/{id}/contacts` uses). Newest
+        first, with cursor pagination: `after` takes the last id of a page and pages
+        toward older items, `before` takes the first id and pages back toward newer
+        ones.
+
+        ``GET /contacts/{id}/segments``
+        """
+        response = self._client.request(
+            "GET",
+            f"/contacts/{encode_path(id)}/segments",
+            query={"limit": limit, "after": after, "before": before},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListSegmentsResponse", response)
+
+    def list_all(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListSegmentsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                id,
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListSegmentsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def add(
         self,
@@ -837,6 +1251,347 @@ class ContactsTopicsResource:
             timeout=timeout,
         )
         return cast("UpdateContactTopicsResponse", response)
+
+
+class DomainsClaimsResource:
+    """Operations on domains claims."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: ClaimDomainRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> DomainClaim:
+        """Claim a domain.
+
+        Starts taking over a domain another team already holds (creating it answers 409
+        "domain already registered"). The response carries a TXT record to publish at
+        the domain; then call Verify Domain Claim. Once the record is seen and the
+        holder's safety checks pass (`blocked_reason`), the holder's domain is removed
+        and the team gets the domain as a new one with its own DKIM key: fetch it with
+        Retrieve Domain under the claim's `domain_id`, publish its records and verify
+        it. Nothing of the holder's data comes with it. A live claim for the same name
+        is returned as it stands; a claim lasts 7 days.
+
+        ``POST /domains/claim``
+        """
+        response = self._client.request(
+            "POST",
+            "/domains/claim",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("DomainClaim", response)
+
+    def get(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> DomainClaim:
+        """Retrieve a domain claim.
+
+        The claim for a placeholder domain id, as it stands. Poll it until `status` is
+        `completed`.
+
+        ``GET /domains/{id}/claim``
+        """
+        response = self._client.request(
+            "GET",
+            f"/domains/{encode_path(id)}/claim",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("DomainClaim", response)
+
+    def verify(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> DomainClaim:
+        """Verify a domain claim.
+
+        Looks for the TXT record, runs the safety checks and, when they pass, transfers
+        the domain: the answer is the claim as it stands, `completed` when the transfer
+        went through. A claim held back (`blocked`) is looked at again every few minutes
+        by BillionSend; calling again checks at once.
+
+        ``POST /domains/{id}/claim/verify``
+        """
+        response = self._client.request(
+            "POST",
+            f"/domains/{encode_path(id)}/claim/verify",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("DomainClaim", response)
+
+
+class EmailsAttachmentsResource:
+    """Operations on emails attachments."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def list(
+        self,
+        email_id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListSentAttachmentsResponse:
+        """List attachments.
+
+        The attachments and inline parts of one sent email, each with a signed download
+        link valid for one hour; all of them unless `limit` is given. Needs a full
+        access key. The files come from the email's stored content, so they are gone
+        once the content retention period removed it (the list is then empty).
+
+        ``GET /emails/{email_id}/attachments``
+        """
+        response = self._client.request(
+            "GET",
+            f"/emails/{encode_path(email_id)}/attachments",
+            query={"limit": limit, "after": after, "before": before},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListSentAttachmentsResponse", response)
+
+    def list_all(
+        self,
+        email_id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListSentAttachmentsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                email_id,
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListSentAttachmentsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
+
+    def get(
+        self,
+        email_id: str,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> GetSentAttachmentResponse:
+        """Get an attachment.
+
+        One attachment's metadata and a signed download link valid for one hour. Needs a
+        full access key.
+
+        ``GET /emails/{email_id}/attachments/{id}``
+        """
+        response = self._client.request(
+            "GET",
+            f"/emails/{encode_path(email_id)}/attachments/{encode_path(id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("GetSentAttachmentResponse", response)
+
+
+class EmailsMetricsResource:
+    """Operations on emails metrics."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def __call__(
+        self,
+        *,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        timezone: str | None = None,
+        granularity: Literal["hourly", "daily", "weekly", "monthly"] | None = None,
+        metrics: Sequence[
+            Literal[
+                "received",
+                "delivered",
+                "complained",
+                "suppressed",
+                "bounced",
+                "bounced_transient",
+                "bounced_permanent",
+                "bounced_undetermined",
+                "opened",
+                "clicked",
+                "unsubscribed",
+                "delivery_delayed",
+                "failed",
+                "sent",
+                "unique_opened",
+                "unique_clicked",
+                "delivery_rate",
+                "open_rate",
+                "click_rate",
+                "bounce_rate",
+                "complaint_rate",
+                "unsubscribe_rate",
+            ]
+        ]
+        | None = None,
+        dimensions: Sequence[Literal["period", "domain", "email", "broadcast"]] | None = None,
+        domain_id: Sequence[str] | None = None,
+        email_id: Sequence[str] | None = None,
+        broadcast_id: Sequence[str] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> EmailsMetricsResponse:
+        """Get email metrics.
+
+        Delivery statistics for a date range, by period, domain, email or broadcast:
+        counts and rates for sent, delivered, bounced, complained, opened and clicked.
+        Needs a full access key.
+
+        ``GET /emails/metrics``
+        """
+        response = self._client.request(
+            "GET",
+            "/emails/metrics",
+            query={
+                "start_date": start_date,
+                "end_date": end_date,
+                "timezone": timezone,
+                "granularity": granularity,
+                "metrics": metrics,
+                "dimensions": dimensions,
+                "domain_id": domain_id,
+                "email_id": email_id,
+                "broadcast_id": broadcast_id,
+            },
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("EmailsMetricsResponse", response)
+
+    def links(
+        self,
+        *,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        domain_id: Sequence[str] | None = None,
+        broadcast_id: Sequence[str] | None = None,
+        limit: int | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> LinkClicksResponse:
+        """Get clicks by link.
+
+        Clicks in a date range by the link that was clicked, with people and machines
+        counted apart. Needs a full access key.
+
+        ``GET /emails/metrics/links``
+        """
+        response = self._client.request(
+            "GET",
+            "/emails/metrics/links",
+            query={
+                "start_date": start_date,
+                "end_date": end_date,
+                "domain_id": domain_id,
+                "broadcast_id": broadcast_id,
+                "limit": limit,
+            },
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("LinkClicksResponse", response)
+
+    def countries(
+        self,
+        *,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        domain_id: Sequence[str] | None = None,
+        broadcast_id: Sequence[str] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> CountryEngagementResponse:
+        """Get opens and clicks by country.
+
+        Opens and clicks in a date range by the reader's country, with people and
+        machines counted apart. Needs a full access key.
+
+        ``GET /emails/metrics/countries``
+        """
+        response = self._client.request(
+            "GET",
+            "/emails/metrics/countries",
+            query={
+                "start_date": start_date,
+                "end_date": end_date,
+                "domain_id": domain_id,
+                "broadcast_id": broadcast_id,
+            },
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("CountryEngagementResponse", response)
+
+    def clients(
+        self,
+        *,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        domain_id: Sequence[str] | None = None,
+        broadcast_id: Sequence[str] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ClientEngagementResponse:
+        """Get opens by mail client.
+
+        Opens in a date range by the mail client that fetched the images. Needs a full
+        access key.
+
+        ``GET /emails/metrics/clients``
+        """
+        response = self._client.request(
+            "GET",
+            "/emails/metrics/clients",
+            query={
+                "start_date": start_date,
+                "end_date": end_date,
+                "domain_id": domain_id,
+                "broadcast_id": broadcast_id,
+            },
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ClientEngagementResponse", response)
 
 
 class EmailsReceivingResource:
@@ -1054,8 +1809,8 @@ class EmailsReceivingResource:
 
         BillionSend extension: erases one received email now, its sealed content, inbox
         memberships and received secrets with it, and threads it leaves empty. Needs a
-        full access key that is not scoped to an inbox; for an MCP token, the owner or
-        admin role. Webhook payloads already sent keep their metadata until the payload
+        full access key that is not scoped to an inbox, from an owner, admin or
+        developer. Webhook payloads already sent keep their metadata until the payload
         retention strips them.
 
         ``DELETE /emails/receiving/{id}``
@@ -1084,8 +1839,10 @@ class InboxesAgentResource:
     ) -> InboxAgent:
         """Get agent settings.
 
-        Hosted-agent settings. BillionSend runs no agent of its own, so an inbox never
-        has one.
+        The instructions, tone and allowed actions saved for this inbox's agent; empty
+        until a first update. BillionSend stores these settings and runs no agent of its
+        own: your own agent reads them (an inbox-scoped key can read its inbox's) and
+        acts on the inbox through the API or MCP.
 
         ``GET /inboxes/{inbox_id}/agent``
         """
@@ -1096,6 +1853,34 @@ class InboxesAgentResource:
             timeout=timeout,
         )
         return cast("InboxAgent", response)
+
+    def update(
+        self,
+        inbox_id: str,
+        params: UpdateInboxAgentRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> UpdateInboxAgentResponse:
+        """Update agent settings.
+
+        Saves the instructions, tone and allowed actions of this inbox's agent. Send at
+        least one field; a field left out keeps its value, `null` clears instructions or
+        tone, and `actions` replaces the list. BillionSend stores these settings and
+        runs no agent of its own: your own agent reads them (an inbox-scoped key can
+        read its inbox's) and acts on the inbox through the API or MCP. Needs a
+        developer role; an inbox-scoped key cannot change them.
+
+        ``PATCH /inboxes/{inbox_id}/agent``
+        """
+        response = self._client.request(
+            "PATCH",
+            f"/inboxes/{encode_path(inbox_id)}/agent",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("UpdateInboxAgentResponse", response)
 
 
 class InboxesCodesResource:
@@ -1321,7 +2106,7 @@ class InboxesDraftsResource:
         """Send a draft.
 
         Sends the draft from the inbox address; the body is optional and only ever holds
-        `headers`, which are not supported yet (an empty value is fine), and an
+        `headers`, which are not supported (an empty value is fine), and an
         `Idempotency-Key` is accepted. Answers the sent email's id. A draft waiting for
         approval goes out only when a person or a team-wide full access key sends it
         (403 approval_required otherwise), and their send skips the inbox's rules but
@@ -1423,8 +2208,9 @@ class InboxesEventsResource:
         """Stream one inbox's events.
 
         BillionSend extension: the event stream of one inbox, as GET /inboxes/events,
-        ending when the inbox is deleted or expires. An inbox-scoped key may stream its
-        own inbox, without the events about held mail.
+        ending when the inbox is deleted or expires; it carries inbox.deleted and
+        inbox.expired whatever types names. An inbox-scoped key may stream its own
+        inbox, without the events about held mail.
 
         ``GET /inboxes/{inbox_id}/events``
         """
@@ -2041,7 +2827,7 @@ class SuppressionsBatchResource:
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> BatchAddSuppressionsResponse:
-        """Add in bulk.
+        """Add suppressions in bulk.
 
         ``POST /suppressions/batch/add``
         """
@@ -2061,7 +2847,7 @@ class SuppressionsBatchResource:
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> BatchRemoveSuppressionsResponse:
-        """Remove in bulk.
+        """Remove suppressions in bulk.
 
         ``POST /suppressions/batch/remove``
         """
@@ -2073,6 +2859,118 @@ class SuppressionsBatchResource:
             timeout=timeout,
         )
         return cast("BatchRemoveSuppressionsResponse", response)
+
+
+class WebhooksEventsResource:
+    """Operations on webhooks events."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+        self.attempts = WebhooksEventsAttemptsResource(client)
+
+    def list(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListWebhookEventsResponse:
+        """List a webhook's events.
+
+        Every event the webhook was sent or is waiting to be sent, newest first. Newest
+        first, with cursor pagination: `after` takes the last id of a page and pages
+        toward older items, `before` takes the first id and pages back toward newer
+        ones.
+
+        ``GET /webhooks/{id}/events``
+        """
+        response = self._client.request(
+            "GET",
+            f"/webhooks/{encode_path(id)}/events",
+            query={"limit": limit, "after": after, "before": before},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListWebhookEventsResponse", response)
+
+    def list_all(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListWebhookEventsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                id,
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListWebhookEventsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
+
+    def get(
+        self,
+        id: str,
+        event_id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> GetWebhookEventResponse:
+        """Retrieve a webhook event.
+
+        ``GET /webhooks/{id}/events/{event_id}``
+        """
+        response = self._client.request(
+            "GET",
+            f"/webhooks/{encode_path(id)}/events/{encode_path(event_id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("GetWebhookEventResponse", response)
+
+    def replay(
+        self,
+        id: str,
+        event_id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ReplayWebhookEventResponse:
+        """Replay a webhook event.
+
+        Posts the event again: a new event with the same payload and the same webhook-
+        id, queued like any other (signed, paced and retried the usual way). Returns the
+        new event. Refused with 422 for a webhook that is disabled and for an event
+        whose payload the retention window has emptied.
+
+        ``POST /webhooks/{id}/events/{event_id}/replay``
+        """
+        response = self._client.request(
+            "POST",
+            f"/webhooks/{encode_path(id)}/events/{encode_path(event_id)}/replay",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ReplayWebhookEventResponse", response)
 
 
 class AgentResource:
@@ -2238,6 +3136,31 @@ class ApiKeysResource:
             "Iterator[ListApiKeysResponseDataItem]", paginate(fetch, after=after, before=before)
         )
 
+    def update(
+        self,
+        id: str,
+        params: UpdateApiKeyRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> UpdateApiKeyResponse:
+        """Update an API key.
+
+        Renames the key. Its permission, domain and inbox scope never change: mint a new
+        key for another scope. A key held to one domain updates only keys held to that
+        same domain; any other key is not found.
+
+        ``PATCH /api-keys/{id}``
+        """
+        response = self._client.request(
+            "PATCH",
+            f"/api-keys/{encode_path(id)}",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("UpdateApiKeyResponse", response)
+
     def delete(
         self,
         id: str,
@@ -2267,6 +3190,295 @@ class AudiencesResource:
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
         self.contacts = AudiencesContactsResource(client)
+
+
+class AutomationsResource:
+    """Operations on automations."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+        self.runs = AutomationsRunsResource(client)
+
+    def create(
+        self,
+        params: CreateAutomationRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> AutomationIdResponse:
+        """Create an automation.
+
+        Steps and connections are checked on every write; a draft may be incomplete.
+        With status enabled the whole automation is checked, including that its
+        templates, sender domains, topics and segments exist (422 with each problem and
+        its JSON Pointer). An agent key can only write drafts (403).
+
+        ``POST /automations``
+        """
+        response = self._client.request(
+            "POST",
+            "/automations",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("AutomationIdResponse", response)
+
+    def list(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        status: Literal["enabled", "disabled"] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListAutomationsResponse:
+        """List automations.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
+
+        ``GET /automations``
+        """
+        response = self._client.request(
+            "GET",
+            "/automations",
+            query={"limit": limit, "after": after, "before": before, "status": status},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListAutomationsResponse", response)
+
+    def list_all(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        status: Literal["enabled", "disabled"] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListAutomationsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                limit=limit,
+                status=status,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListAutomationsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
+
+    def get(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> GetAutomationResponse:
+        """Retrieve an automation.
+
+        ``GET /automations/{id}``
+        """
+        response = self._client.request(
+            "GET",
+            f"/automations/{encode_path(id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("GetAutomationResponse", response)
+
+    def update(
+        self,
+        id: str,
+        params: UpdateAutomationRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> AutomationIdResponse:
+        """Update an automation.
+
+        Name, status and/or steps with connections. Changing the steps adds a version;
+        runs already going keep the version they started on. An enabled automation's
+        steps cannot change (409): stop it first, or give status disabled in the same
+        request, or duplicate it. Enabling checks the whole automation (422 with each
+        problem and its JSON Pointer); an agent key cannot enable (403).
+
+        ``PATCH /automations/{id}``
+        """
+        response = self._client.request(
+            "PATCH",
+            f"/automations/{encode_path(id)}",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("AutomationIdResponse", response)
+
+    def remove(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> RemoveAutomationResponse:
+        """Remove an automation.
+
+        Removes the automation and its versions at once; runs still going are not
+        executed any more, and its run history is deleted in the background.
+
+        ``DELETE /automations/{id}``
+        """
+        response = self._client.request(
+            "DELETE",
+            f"/automations/{encode_path(id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("RemoveAutomationResponse", response)
+
+    def duplicate(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> AutomationIdResponse:
+        """Duplicate an automation.
+
+        A new automation named "<name> (copy)", disabled, with the same steps and
+        connections.
+
+        ``POST /automations/{id}/duplicate``
+        """
+        response = self._client.request(
+            "POST",
+            f"/automations/{encode_path(id)}/duplicate",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("AutomationIdResponse", response)
+
+    def stop(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> StopAutomationResponse:
+        """Stop an automation.
+
+        Sets the automation to disabled: no new runs start; runs already going finish.
+        Stopping a stopped automation answers the same.
+
+        ``POST /automations/{id}/stop``
+        """
+        response = self._client.request(
+            "POST",
+            f"/automations/{encode_path(id)}/stop",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("StopAutomationResponse", response)
+
+    def validate(
+        self,
+        params: ValidateAutomationRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ValidateAutomationResponse:
+        """Validate an automation document.
+
+        BillionSend extension. Checks steps and connections without storing anything.
+        Always answers 200 with every problem found: layer draft are the problems that
+        stop a save (the same check as every write), layer enable are what stops
+        enabling (a trigger, reachability, and that the templates, sender domains,
+        topics and segments exist; reported only for a document that can be saved). Each
+        has a JSON Pointer path into the submitted document, a stable code and a
+        suggestion.
+
+        ``POST /automations/validate``
+        """
+        response = self._client.request(
+            "POST",
+            "/automations/validate",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ValidateAutomationResponse", response)
+
+    def simulate(
+        self,
+        id: str,
+        params: SimulateAutomationRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> SimulateAutomationResponse:
+        """Simulate a run of an automation.
+
+        BillionSend extension. Works out one contact's pass through the automation's
+        current steps without running anything: which way each step goes, when, and the
+        mail it would send. The clock is the simulation's own: delays and waits move it,
+        so a flow of days answers at once. Waits take the events given, in order.
+        Nothing is sent, stored or counted. Send steps are checked against the published
+        template, the sender domain, the topic, the recipient's opt-outs and the
+        suppression list; the team's send quota, reputation holds and reviews are
+        decided only when mail is really accepted. contact_update changes a copy of the
+        contact for the steps after it. Works on a draft too, if it has a trigger.
+
+        ``POST /automations/{id}/simulate``
+        """
+        response = self._client.request(
+            "POST",
+            f"/automations/{encode_path(id)}/simulate",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("SimulateAutomationResponse", response)
+
+    def metrics(
+        self,
+        id: str,
+        *,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> AutomationMetricsResponse:
+        """Metrics of an automation.
+
+        BillionSend extension. What the statistics store counted for the automation in a
+        period (default the last seven UTC days): runs started, completed, failed and
+        cancelled; the results of the mail it sent; and for every step of the current
+        version the people who entered, finished, failed in and skipped it. Counts
+        follow the sink loop within seconds.
+
+        ``GET /automations/{id}/metrics``
+        """
+        response = self._client.request(
+            "GET",
+            f"/automations/{encode_path(id)}/metrics",
+            query={"start_date": start_date, "end_date": end_date},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("AutomationMetricsResponse", response)
 
 
 class BroadcastsResource:
@@ -2407,6 +3619,161 @@ class BroadcastsResource:
             timeout=timeout,
         )
         return cast("RemoveBroadcastResponse", response)
+
+    def recipients(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        type: Literal[
+            "sent",
+            "delivered",
+            "opened",
+            "clicked",
+            "bounced",
+            "complained",
+            "unsubscribed",
+            "suppressed",
+        ],
+        email: str | None = None,
+        bounce_type: Literal["permanent", "transient", "undetermined"] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListBroadcastRecipientsResponse:
+        """List broadcast recipients.
+
+        The recipients of a broadcast that had one outcome: `type` (required) is sent,
+        delivered, opened, clicked, bounced, complained, unsubscribed or suppressed.
+        `email` narrows to one address; `bounce_type` (permanent, transient or
+        undetermined) narrows bounces. Read from the delivery records, newest recipient
+        first. Newest first, with cursor pagination: `after` takes the last id of a page
+        and pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
+
+        ``GET /broadcasts/{id}/recipients``
+        """
+        response = self._client.request(
+            "GET",
+            f"/broadcasts/{encode_path(id)}/recipients",
+            query={
+                "limit": limit,
+                "after": after,
+                "before": before,
+                "type": type,
+                "email": email,
+                "bounce_type": bounce_type,
+            },
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListBroadcastRecipientsResponse", response)
+
+    def recipients_all(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        type: Literal[
+            "sent",
+            "delivered",
+            "opened",
+            "clicked",
+            "bounced",
+            "complained",
+            "unsubscribed",
+            "suppressed",
+        ],
+        email: str | None = None,
+        bounce_type: Literal["permanent", "transient", "undetermined"] | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListBroadcastRecipientsResponseDataItem]:
+        """Iterate over every item of :meth:`recipients`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.recipients(
+                id,
+                limit=limit,
+                type=type,
+                email=email,
+                bounce_type=bounce_type,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListBroadcastRecipientsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
+
+    def clicked_links(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListBroadcastClickedLinksResponse:
+        """List broadcast clicked links.
+
+        The links recipients clicked in a broadcast, most clicked first, from the
+        statistics (the same counts as `GET /emails/metrics/links`). Newest first, with
+        cursor pagination: `after` takes the last id of a page and pages toward older
+        items, `before` takes the first id and pages back toward newer ones.
+
+        ``GET /broadcasts/{id}/clicked-links``
+        """
+        response = self._client.request(
+            "GET",
+            f"/broadcasts/{encode_path(id)}/clicked-links",
+            query={"limit": limit, "after": after, "before": before},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListBroadcastClickedLinksResponse", response)
+
+    def clicked_links_all(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListBroadcastClickedLinksResponseDataItem]:
+        """Iterate over every item of :meth:`clicked_links`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.clicked_links(
+                id,
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListBroadcastClickedLinksResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def send(
         self,
@@ -2619,6 +3986,7 @@ class ContactsResource:
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
         self.batch = ContactsBatchResource(client)
+        self.imports = ContactsImportsResource(client)
         self.segments = ContactsSegmentsResource(client)
         self.topics = ContactsTopicsResource(client)
 
@@ -2805,6 +4173,10 @@ class DeliverabilityResource:
     ) -> DeliverabilityResponse:
         """Get deliverability.
 
+        The account deliverability score over the last 30 days, its content and outcome
+        parts, your hard bounce and complaint rates, and your standing. BillionSend
+        extension.
+
         ``GET /deliverability``
         """
         response = self._client.request(
@@ -2821,6 +4193,7 @@ class DomainsResource:
 
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
+        self.claims = DomainsClaimsResource(client)
 
     def create(
         self,
@@ -2981,71 +4354,9 @@ class EmailsResource:
 
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
+        self.attachments = EmailsAttachmentsResource(client)
+        self.metrics = EmailsMetricsResource(client)
         self.receiving = EmailsReceivingResource(client)
-
-    def metrics(
-        self,
-        *,
-        start_date: str | None = None,
-        end_date: str | None = None,
-        timezone: str | None = None,
-        granularity: Literal["hourly", "daily", "weekly", "monthly"] | None = None,
-        metrics: Sequence[
-            Literal[
-                "received",
-                "delivered",
-                "complained",
-                "suppressed",
-                "bounced",
-                "bounced_transient",
-                "bounced_permanent",
-                "bounced_undetermined",
-                "opened",
-                "clicked",
-                "unsubscribed",
-                "delivery_delayed",
-                "failed",
-                "sent",
-                "unique_opened",
-                "unique_clicked",
-                "delivery_rate",
-                "open_rate",
-                "click_rate",
-                "bounce_rate",
-                "complaint_rate",
-                "unsubscribe_rate",
-            ]
-        ]
-        | None = None,
-        dimensions: Sequence[Literal["period", "domain", "email", "broadcast"]] | None = None,
-        domain_id: Sequence[str] | None = None,
-        email_id: Sequence[str] | None = None,
-        broadcast_id: Sequence[str] | None = None,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> EmailsMetricsResponse:
-        """Get email metrics.
-
-        ``GET /emails/metrics``
-        """
-        response = self._client.request(
-            "GET",
-            "/emails/metrics",
-            query={
-                "start_date": start_date,
-                "end_date": end_date,
-                "timezone": timezone,
-                "granularity": granularity,
-                "metrics": metrics,
-                "dimensions": dimensions,
-                "domain_id": domain_id,
-                "email_id": email_id,
-                "broadcast_id": broadcast_id,
-            },
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("EmailsMetricsResponse", response)
 
     def send(
         self,
@@ -3056,6 +4367,11 @@ class EmailsResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> SendEmailResponse:
         """Send an email.
+
+        Queue one email for sending, now or at `scheduled_at` (up to 30 days ahead).
+        `to`, `cc` and `bcc` together hold at most 50 recipients. Retry with the same
+        `Idempotency-Key` and payload to get the original answer instead of a second
+        email.
 
         Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
         up for this call, so that its retries never send twice.
@@ -3137,6 +4453,10 @@ class EmailsResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> BatchEmailResponse:
         """Send a batch of emails.
+
+        Queue up to 100 emails in one request. With `x-batch-validation: strict` (the
+        default) one invalid email refuses the whole batch; with `permissive` the valid
+        ones are queued and each invalid one is reported by its index.
 
         Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
         up for this call, so that its retries never send twice.
@@ -3233,6 +4553,55 @@ class EmailsResource:
         )
         return cast("RemoveEmailResponse", response)
 
+    def share(
+        self,
+        id: str,
+        params: ShareEmailRequest | None = None,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ShareEmailResponse:
+        """Share an email.
+
+        Creates a public link to view one sent email: its header lines and its body,
+        nothing else about the team or the email (no Bcc, no files to download). The
+        link carries a random token, expires after `expires_in` (48 hours at most, and
+        by default) and can be revoked earlier with `DELETE /emails/{id}/share`. Needs a
+        full access key.
+
+        ``POST /emails/{id}/share``
+        """
+        response = self._client.request(
+            "POST",
+            f"/emails/{encode_path(id)}/share",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ShareEmailResponse", response)
+
+    def unshare(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> UnshareEmailResponse:
+        """Revoke an email's share links.
+
+        Ends every live share link of one sent email at once. BillionSend extension; the
+        links of other emails are not touched. Needs a full access key.
+
+        ``DELETE /emails/{id}/share``
+        """
+        response = self._client.request(
+            "DELETE",
+            f"/emails/{encode_path(id)}/share",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("UnshareEmailResponse", response)
+
     def insights(
         self,
         id: str,
@@ -3241,6 +4610,9 @@ class EmailsResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> EmailInsightsResponse:
         """Get email insights.
+
+        The check results and score for one email. Answers 404 when the email has no
+        insights. BillionSend extension.
 
         ``GET /emails/{id}/insights``
         """
@@ -3251,6 +4623,195 @@ class EmailsResource:
             timeout=timeout,
         )
         return cast("EmailInsightsResponse", response)
+
+
+class EventsResource:
+    """Operations on events."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateEventRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> CreateEventResponse:
+        """Create an event.
+
+        Defines a custom event: its name and, optionally, a payload schema (a flat map
+        from key to string, number, boolean or date). The definition is only used to
+        check the payload of `events.send`; automations match an event by name whether
+        or not it is defined.
+
+        ``POST /events``
+        """
+        response = self._client.request(
+            "POST",
+            "/events",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("CreateEventResponse", response)
+
+    def list(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListEventsResponse:
+        """List events.
+
+        The team's event definitions. Newest first, with cursor pagination: `after`
+        takes the last id of a page and pages toward older items, `before` takes the
+        first id and pages back toward newer ones.
+
+        ``GET /events``
+        """
+        response = self._client.request(
+            "GET",
+            "/events",
+            query={"limit": limit, "after": after, "before": before},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListEventsResponse", response)
+
+    def list_all(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListEventsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListEventsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
+
+    def send(
+        self,
+        params: SendEventRequest,
+        *,
+        idempotency_key: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> SendEventResponse:
+        """Send an event.
+
+        Records an event for a contact, given by `contact_id` or by `email` (exactly
+        one). Every enabled automation whose trigger is this event name starts a run for
+        the contact, and runs waiting for this event continue. The event is accepted
+        whether or not it is defined or any automation matches; when it is defined with
+        a schema, the payload is checked against it and each typed value is converted. A
+        contact that does not exist yet is created when an automation needs it. Retry
+        with the same `Idempotency-Key` and the same body to get the original answer
+        instead of a second event.
+
+        Sent with an ``Idempotency-Key``: ``idempotency_key`` when given, else one made
+        up for this call, so that its retries never send twice.
+
+        ``POST /events/send``
+        """
+        response = self._client.request(
+            "POST",
+            "/events/send",
+            body=params,
+            idempotency_key=idempotency_key,
+            auto_idempotency_key=True,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("SendEventResponse", response)
+
+    def get(
+        self,
+        id_or_name: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Event:
+        """Retrieve an event.
+
+        By id or by name. A name with `/`, `%` or spaces goes through the path URL-
+        encoded.
+
+        ``GET /events/{id_or_name}``
+        """
+        response = self._client.request(
+            "GET",
+            f"/events/{encode_path(id_or_name)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("Event", response)
+
+    def update(
+        self,
+        id_or_name: str,
+        params: UpdateEventRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> UpdateEventResponse:
+        """Update an event.
+
+        Replaces the payload schema; `null` clears it. The name cannot change. Runs
+        already started are not affected: the schema is read only when an event is sent.
+
+        ``PATCH /events/{id_or_name}``
+        """
+        response = self._client.request(
+            "PATCH",
+            f"/events/{encode_path(id_or_name)}",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("UpdateEventResponse", response)
+
+    def remove(
+        self,
+        id_or_name: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> RemoveEventResponse:
+        """Delete an event.
+
+        Removes the definition, and with it the payload check. Automations match by
+        name, so they are not affected, and the name can still be sent.
+
+        ``DELETE /events/{id_or_name}``
+        """
+        response = self._client.request(
+            "DELETE",
+            f"/events/{encode_path(id_or_name)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("RemoveEventResponse", response)
 
 
 class InboxesResource:
@@ -3455,6 +5016,177 @@ class InboxesResource:
             timeout=timeout,
         )
         return cast("InboxSentEmail | InboxDraft", response)
+
+
+class LogsResource:
+    """Operations on logs."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def list(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListLogsResponse:
+        """List request logs.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones. Every authenticated request the team's keys and connected apps made,
+        this one included; the bodies come with Retrieve a log.
+
+        ``GET /logs``
+        """
+        response = self._client.request(
+            "GET",
+            "/logs",
+            query={"limit": limit, "after": after, "before": before},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListLogsResponse", response)
+
+    def list_all(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListLogsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListLogsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
+
+    def get(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> GetLogResponse:
+        """Retrieve a log.
+
+        One logged request with its JSON request and response bodies. Bodies were
+        redacted when stored: html, text and attachment data are size markers, tokens
+        and secrets are `[redacted]`. A caller acting as a person whose role lacks
+        developer access gets null bodies; an API key always gets them.
+
+        ``GET /logs/{id}``
+        """
+        response = self._client.request(
+            "GET",
+            f"/logs/{encode_path(id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("GetLogResponse", response)
+
+
+class OauthGrantsResource:
+    """Operations on oauth grants."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def list(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListOAuthGrantsResponse:
+        """List OAuth grants.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones. The apps connected to the team, MCP clients among them, that hold a
+        grant in force.
+
+        ``GET /oauth/grants``
+        """
+        response = self._client.request(
+            "GET",
+            "/oauth/grants",
+            query={"limit": limit, "after": after, "before": before},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListOAuthGrantsResponse", response)
+
+    def list_all(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[OAuthGrant]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast("Iterator[OAuthGrant]", paginate(fetch, after=after, before=before))
+
+    def revoke(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> RevokeOAuthGrantResponse:
+        """Revoke an OAuth grant.
+
+        Ends the grant with every token issued under it: access tokens stop working at
+        once and the app has to ask for consent again. The grant's holder may revoke it;
+        otherwise the caller needs owner or admin access, and an all-teams grant needs
+        admin access to every team its holder belongs to. The grant is deleted, so it is
+        not listed afterwards.
+
+        ``DELETE /oauth/grants/{id}``
+        """
+        response = self._client.request(
+            "DELETE",
+            f"/oauth/grants/{encode_path(id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("RevokeOAuthGrantResponse", response)
 
 
 class SegmentsResource:
@@ -4088,25 +5820,6 @@ class UnsubscribesResource:
         )
         return cast("UnsubscribeResponse", response)
 
-    def delete(
-        self,
-        id: str,
-        *,
-        extra_headers: Mapping[str, str] | None = None,
-        timeout: float | httpx.Timeout | None = None,
-    ) -> RemoveUnsubscribeResponse:
-        """Delete an unsubscribe.
-
-        ``DELETE /unsubscribes/{id}``
-        """
-        response = self._client.request(
-            "DELETE",
-            f"/unsubscribes/{encode_path(id)}",
-            extra_headers=extra_headers,
-            timeout=timeout,
-        )
-        return cast("RemoveUnsubscribeResponse", response)
-
 
 class UsageResource:
     """Operations on usage."""
@@ -4121,6 +5834,11 @@ class UsageResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> UsageResponse:
         """Get usage.
+
+        What the team uses against what its plan allows: emails (the UTC day and the
+        billing period), contacts, segments, broadcasts, domains and the API rate limit.
+        BillionSend adds `plan`, `inboxes`, `webhook_endpoints`, `verification` and the
+        period's overage fields. A limit nothing caps is null.
 
         ``GET /usage``
         """
@@ -4285,6 +6003,7 @@ class WebhooksResource:
 
     def __init__(self, client: SyncAPIClient) -> None:
         self._client = client
+        self.events = WebhooksEventsResource(client)
 
     def create(
         self,
@@ -4419,7 +6138,7 @@ class WebhooksResource:
         )
         return cast("RemoveWebhookResponse", response)
 
-    def rotate(
+    def rotate_signing_secret(
         self,
         id: str,
         params: RotateWebhookSecretRequest | None = None,
@@ -4435,11 +6154,11 @@ class WebhooksResource:
         separated in webhook-signature, so the receiver can switch at any point without
         a gap. A second rotation inside the window replaces the previous secret.
 
-        ``POST /webhooks/{id}/rotate``
+        ``POST /webhooks/{id}/signing-secret/rotate``
         """
         response = self._client.request(
             "POST",
-            f"/webhooks/{encode_path(id)}/rotate",
+            f"/webhooks/{encode_path(id)}/signing-secret/rotate",
             body=params,
             extra_headers=extra_headers,
             timeout=timeout,
@@ -4452,17 +6171,24 @@ __all__ = [
     "ApiKeysResource",
     "AudiencesResource",
     "AudiencesContactsResource",
+    "AutomationsResource",
+    "AutomationsRunsResource",
     "BroadcastsResource",
     "ContactPropertiesResource",
     "ContactsResource",
     "ContactsBatchResource",
+    "ContactsImportsResource",
     "ContactsSegmentsResource",
     "ContactsTopicsResource",
     "DeliverabilityResource",
     "DomainsResource",
+    "DomainsClaimsResource",
     "EmailsResource",
+    "EmailsAttachmentsResource",
+    "EmailsMetricsResource",
     "EmailsReceivingResource",
     "EmailsReceivingAttachmentsResource",
+    "EventsResource",
     "InboxesResource",
     "InboxesAgentResource",
     "InboxesCodesResource",
@@ -4474,6 +6200,8 @@ __all__ = [
     "InboxesThreadsResource",
     "InboxesThreadsEmailsResource",
     "InboxesThreadsLabelsResource",
+    "LogsResource",
+    "OauthGrantsResource",
     "SegmentsResource",
     "SegmentsContactsResource",
     "SuppressionsResource",
@@ -4484,4 +6212,6 @@ __all__ = [
     "UsageResource",
     "VerificationsResource",
     "WebhooksResource",
+    "WebhooksEventsResource",
+    "WebhooksEventsAttemptsResource",
 ]

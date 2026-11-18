@@ -10,6 +10,7 @@ Usage::
 
     python scripts/sync_openapi.py                  # fetch the published document
     python scripts/sync_openapi.py --from path.json # copy a local document
+    python scripts/sync_openapi.py --check          # fail if the snapshot is not the published one
 
 Free-text ``description`` / ``summary`` strings that name other products are
 dropped from the snapshot (they carry no contract), so the repository only ever
@@ -30,9 +31,7 @@ DEFAULT_URL = "https://billionsend.com/docs/api.openapi.json"
 SNAPSHOT = Path(__file__).resolve().parent.parent / "openapi" / "api.openapi.json"
 
 # Names of other products that must not appear in this repository.
-FOREIGN_NAMES = re.compile(
-    r"\b(?:" + "|".join(["Re" + "send", "Sv" + "ix"]) + r")\b", re.IGNORECASE
-)
+FOREIGN_NAMES = re.compile("|".join(["Re" + "send", "Sv" + "ix"]), re.IGNORECASE)
 TEXT_KEYS = {"description", "summary"}
 
 
@@ -66,10 +65,46 @@ def load(source: str | None) -> Any:
         return json.loads(response.read().decode("utf-8"))
 
 
+def operation_keys(document: Any) -> set[str]:
+    return {
+        f"{method.upper()} {path}"
+        for path, item in document["paths"].items()
+        for method in item
+        if method in {"get", "put", "post", "patch", "delete", "head", "options"}
+    }
+
+
+def check(document: Any) -> int:
+    """Compare the snapshot with ``document``; 0 when they are the same."""
+    text = json.dumps(document, indent=2, ensure_ascii=False) + "\n"
+    current = SNAPSHOT.read_text(encoding="utf-8") if SNAPSHOT.exists() else ""
+    if text == current:
+        print("the OpenAPI snapshot matches the published document")
+        return 0
+    old = operation_keys(json.loads(current)) if current else set()
+    new = operation_keys(document)
+    print("the OpenAPI snapshot differs from the published document", file=sys.stderr)
+    for key in sorted(new - old):
+        print(f"  published, missing from the snapshot: {key}", file=sys.stderr)
+    for key in sorted(old - new):
+        print(f"  in the snapshot, no longer published: {key}", file=sys.stderr)
+    print(
+        "run `python scripts/sync_openapi.py && python scripts/generate.py`, "
+        "then follow what the tests report",
+        file=sys.stderr,
+    )
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "--from", dest="source", help="local OpenAPI document instead of the published one"
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="do not write; fail when the snapshot differs from the document",
     )
     args = parser.parse_args(argv)
 
@@ -77,15 +112,14 @@ def main(argv: list[str] | None = None) -> int:
     if not str(document.get("openapi", "")).startswith("3.1"):
         print(f"expected OpenAPI 3.1, got {document.get('openapi')!r}", file=sys.stderr)
         return 1
+    if args.check:
+        return check(document)
     SNAPSHOT.parent.mkdir(parents=True, exist_ok=True)
     SNAPSHOT.write_text(json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    operations = sum(
-        1
-        for item in document["paths"].values()
-        for method in item
-        if method in {"get", "put", "post", "patch", "delete", "head", "options"}
+    print(
+        f"wrote {SNAPSHOT} ({len(operation_keys(document))} operations, "
+        f"{dropped} free-text fields dropped)"
     )
-    print(f"wrote {SNAPSHOT} ({operations} operations, {dropped} free-text fields dropped)")
     return 0
 
 

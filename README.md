@@ -157,27 +157,54 @@ def billionsend_webhook():
 
 | Attribute | Covers |
 | --- | --- |
-| `emails` | send, batch, list, get, update, cancel, delete, insights, metrics |
-| `emails.receiving` (`.attachments`) | received mail: list, get, delete, reply, forward; attachments |
-| `domains` | create, list, get, update, delete, verify |
-| `api_keys` | create, list, delete |
-| `contacts` (`.topics`, `.segments`, `.batch`) | create, list, get, update, delete, preferences_link; `batch.create`, `batch.get`, `batch.remove` |
+| `emails` (`.attachments`) | send, batch, list, get, update, cancel, delete, insights, share, unshare; `attachments.list`, `attachments.get` |
+| `emails.metrics` | `client.emails.metrics(...)` is the time series; `metrics.clients`, `metrics.countries`, `metrics.links` break opens and clicks down |
+| `emails.receiving` (`.attachments`) | received mail: list, get, delete, reply, forward; attachments and their extracted text |
+| `domains` (`.claims`) | create, list, get, update, delete, verify; `claims.create`, `claims.get`, `claims.verify` |
+| `api_keys` | create, list, update, delete |
+| `contacts` (`.topics`, `.segments`, `.batch`, `.imports`) | create, list, get, update, delete, preferences_link; `segments.list`, `segments.add`, `segments.remove`; `batch.create`, `batch.get`, `batch.remove`; `imports.create` (a CSV upload), `imports.list`, `imports.get` |
 | `audiences.contacts` | contacts addressed through an audience |
 | `contact_properties`, `segments` (`.contacts`), `topics` | contact data and grouping |
-| `broadcasts` | create, list, get, update, delete, send, duplicate, cancel |
+| `broadcasts` | create, list, get, update, delete, send, duplicate, cancel, recipients, clicked_links |
 | `templates` | create, list, get, update, delete, publish, duplicate |
-| `webhooks` | create, list, get, update, delete, rotate |
-| `suppressions` (`.batch`), `unsubscribes` | suppression list (`batch.add`, `batch.remove`) and opt-outs |
+| `webhooks` (`.events`) | create, list, get, update, delete, rotate_signing_secret; `events.list`, `events.get`, `events.replay`, `events.attempts.list` |
+| `suppressions` (`.batch`), `unsubscribes` | suppression list (`batch.add`, `batch.remove`) and opt-outs (`unsubscribes.list`, `unsubscribes.create`) |
 | `verifications` | availability, estimate, create, list, get |
-| `usage`, `deliverability` | account usage and sending health |
+| `usage`, `deliverability` | account usage (`emails.daily`, `emails.monthly`, `contacts`, `domains`, …) and sending health |
+| `events` | custom events: create, list, get, update, remove, send |
+| `automations` (`.runs`) | create, list, get, update, remove, validate, duplicate, simulate, stop, metrics; `runs.list`, `runs.get`, `runs.cancel` |
+| `logs`, `oauth_grants` | request logs (`list`, `get`) and OAuth grants (`list`, `revoke`) |
 | `inboxes` (`.events`) | create, list, get, update, delete, send; `events.stream`, `events.stream_inbox` |
-| `inboxes.agent`, `.safety`, `.labels`, `.codes`, `.quarantine`, `.drafts` | inbox settings, labels, verification codes, held mail, drafts |
+| `inboxes.agent` (`get`, `update`), `.safety`, `.labels`, `.codes`, `.quarantine`, `.drafts` | inbox settings, labels, verification codes, held mail, drafts |
 | `inboxes.threads` (`.labels`, `.emails`) | list, search, get, update, delete; thread labels; messages, reply and forward |
 | `agent` | signup, status, claim_email |
 
-Each method is named after its operation's `operationId` in the API document: `emails.receiving.attachments.list` is `client.emails.receiving.attachments.list`, with camelCase written in snake_case (`agent.claimEmail` is `client.agent.claim_email`).
+Each method is named after its operation's `operationId` in the API document: `emails.receiving.attachments.list` is `client.emails.receiving.attachments.list`, with camelCase written in snake_case (`agent.claimEmail` is `client.agent.claim_email`, `oauthGrants.list` is `client.oauth_grants.list`).
 
 Path parameters are positional (`client.domains.get(domain_id)`), the request body is a `dict` (`client.domains.create({"name": "acme.dev"})`) and query parameters are keyword arguments (`client.emails.list(limit=50)`). A parameter named after a Python keyword takes a trailing underscore (`from_=`). Every method also takes `extra_headers=` and `timeout=`.
+
+## Importing contacts from a CSV
+
+`contacts.imports.create` uploads a file (`multipart/form-data`) and imports it in the background. `file` is the content as `bytes`, a binary file object, or a tuple of the file name and content (optionally followed by the content type); `column_map` (a `dict`), `segments` and `topics` (lists) are JSON-encoded by the SDK; a `str` you encoded yourself is sent as it is. Poll `contacts.imports.get` for `status` and `counts`:
+
+```python
+import time
+
+with open("contacts.csv", "rb") as csv:
+    started = client.contacts.imports.create(
+        {
+            "file": ("contacts.csv", csv, "text/csv"),
+            "column_map": {"email": "Email", "first_name": "First Name"},
+            "on_conflict": "skip",
+        }
+    )
+
+job = client.contacts.imports.get(started["id"])
+while job["status"] in ("queued", "in_progress"):
+    time.sleep(2)
+    job = client.contacts.imports.get(started["id"])
+print(job["status"], job["counts"])
+```
 
 ## Pagination
 
@@ -262,7 +289,7 @@ uv run python scripts/generate.py
 uv run pytest
 ```
 
-Whatever fails is what the SDK has to follow. CI runs `scripts/generate.py --check` so the generated code never drifts from the snapshot.
+Whatever fails is what the SDK has to follow. CI runs `scripts/generate.py --check` so the generated code never drifts from the snapshot, and `scripts/sync_openapi.py --check` (on every push and pull request, and every day) so the snapshot never drifts from the document published at https://billionsend.com/docs/api.openapi.json. The tests never touch the network.
 
 ## Releasing
 

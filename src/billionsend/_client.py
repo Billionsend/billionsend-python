@@ -20,13 +20,17 @@ from .resources import (
     AsyncAgentResource,
     AsyncApiKeysResource,
     AsyncAudiencesResource,
+    AsyncAutomationsResource,
     AsyncBroadcastsResource,
     AsyncContactPropertiesResource,
     AsyncContactsResource,
     AsyncDeliverabilityResource,
     AsyncDomainsResource,
     AsyncEmailsResource,
+    AsyncEventsResource,
     AsyncInboxesResource,
+    AsyncLogsResource,
+    AsyncOauthGrantsResource,
     AsyncSegmentsResource,
     AsyncSuppressionsResource,
     AsyncTemplatesResource,
@@ -36,13 +40,17 @@ from .resources import (
     AsyncVerificationsResource,
     AsyncWebhooksResource,
     AudiencesResource,
+    AutomationsResource,
     BroadcastsResource,
     ContactPropertiesResource,
     ContactsResource,
     DeliverabilityResource,
     DomainsResource,
     EmailsResource,
+    EventsResource,
     InboxesResource,
+    LogsResource,
+    OauthGrantsResource,
     SegmentsResource,
     SuppressionsResource,
     TemplatesResource,
@@ -89,6 +97,10 @@ class BillionSend(SyncAPIClient):
     deliverability: DeliverabilityResource
     inboxes: InboxesResource
     agent: AgentResource
+    automations: AutomationsResource
+    events: EventsResource
+    logs: LogsResource
+    oauth_grants: OauthGrantsResource
 
     def __init__(
         self,
@@ -126,6 +138,10 @@ class BillionSend(SyncAPIClient):
         self.deliverability = DeliverabilityResource(self)
         self.inboxes = InboxesResource(self)
         self.agent = AgentResource(self)
+        self.automations = AutomationsResource(self)
+        self.events = EventsResource(self)
+        self.logs = LogsResource(self)
+        self.oauth_grants = OauthGrantsResource(self)
 
     def __enter__(self) -> BillionSend:
         return self
@@ -162,6 +178,10 @@ class AsyncBillionSend(AsyncAPIClient):
     deliverability: AsyncDeliverabilityResource
     inboxes: AsyncInboxesResource
     agent: AsyncAgentResource
+    automations: AsyncAutomationsResource
+    events: AsyncEventsResource
+    logs: AsyncLogsResource
+    oauth_grants: AsyncOauthGrantsResource
 
     def __init__(
         self,
@@ -199,6 +219,10 @@ class AsyncBillionSend(AsyncAPIClient):
         self.deliverability = AsyncDeliverabilityResource(self)
         self.inboxes = AsyncInboxesResource(self)
         self.agent = AsyncAgentResource(self)
+        self.automations = AsyncAutomationsResource(self)
+        self.events = AsyncEventsResource(self)
+        self.logs = AsyncLogsResource(self)
+        self.oauth_grants = AsyncOauthGrantsResource(self)
 
     async def __aenter__(self) -> AsyncBillionSend:
         return self

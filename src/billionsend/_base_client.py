@@ -70,6 +70,34 @@ def encode_query(query: Mapping[str, Any] | None) -> list[tuple[str, QueryValue]
     return pairs
 
 
+def encode_form(
+    form: Mapping[str, Any] | None,
+) -> tuple[dict[str, str] | None, list[tuple[str, Any]] | None]:
+    """Split a multipart form into its text fields and its files.
+
+    A ``bytes`` value, a binary file object or a tuple of (file name, content
+    [, content type]) is a file; a ``dict`` or ``list`` is a text field encoded
+    as JSON; anything else is a text field as it is. httpx writes
+    the multipart boundary and the ``Content-Type`` header.
+    """
+    if form is None:
+        return None, None
+    data: dict[str, str] = {}
+    files: list[tuple[str, Any]] = []
+    for key, value in form.items():
+        if value is None:
+            continue
+        if isinstance(value, bytes | tuple) or hasattr(value, "read"):
+            files.append((key, value if isinstance(value, tuple) else (key, value)))
+        elif isinstance(value, dict | list):
+            data[key] = json.dumps(value, separators=(",", ":"))
+        elif isinstance(value, bool):
+            data[key] = "true" if value else "false"
+        else:
+            data[key] = str(value)
+    return data, files
+
+
 def parse_retry_after(response: httpx.Response) -> float | None:
     header = response.headers.get("retry-after")
     if not header:
@@ -268,16 +296,20 @@ class BaseClient:
         *,
         query: Mapping[str, Any] | None,
         body: Any,
+        form: Mapping[str, Any] | None,
         headers: dict[str, str],
         timeout: Timeout | None,
     ) -> httpx.Request:
         content = None if body is None else json.dumps(body, separators=(",", ":")).encode()
+        data, files = encode_form(form)
         effective = self.timeout if timeout is None else timeout
         return http.build_request(
             method,
             self._url(path),
             params=encode_query(query),
             content=content,
+            data=data,
+            files=files,
             headers=headers,
             timeout=effective,
         )
@@ -322,6 +354,7 @@ class SyncAPIClient(BaseClient):
         query: Mapping[str, Any] | None = None,
         headers: Mapping[str, str | None] | None = None,
         body: Any = None,
+        form: Mapping[str, Any] | None = None,
         idempotency_key: str | None = None,
         auto_idempotency_key: bool = False,
         auth: bool = True,
@@ -344,6 +377,7 @@ class SyncAPIClient(BaseClient):
                 path,
                 query=query,
                 body=body,
+                form=form,
                 headers=all_headers,
                 timeout=timeout,
             )
@@ -464,6 +498,7 @@ class AsyncAPIClient(BaseClient):
         query: Mapping[str, Any] | None = None,
         headers: Mapping[str, str | None] | None = None,
         body: Any = None,
+        form: Mapping[str, Any] | None = None,
         idempotency_key: str | None = None,
         auto_idempotency_key: bool = False,
         auth: bool = True,
@@ -486,6 +521,7 @@ class AsyncAPIClient(BaseClient):
                 path,
                 query=query,
                 body=body,
+                form=form,
                 headers=all_headers,
                 timeout=timeout,
             )
