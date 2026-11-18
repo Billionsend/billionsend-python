@@ -58,7 +58,7 @@ asyncio.run(main())
 
 ## Authentication
 
-Pass an API key (`bs_…`) as the first argument or set `BILLIONSEND_API_KEY`. Keys are made in the dashboard or with `client.api_keys.create`. A key scoped to one inbox can only reach that inbox.
+Pass an API key (`bs_…`) as the first argument or set `BILLIONSEND_API_KEY`. Keys are made in the dashboard or with `client.api_keys.create`. A key scoped to one inbox can only reach that inbox. Whitespace around the key (a trailing newline from a file) is ignored, and a key of only whitespace counts as none.
 
 An agent can also create its own account, the one call that needs no key:
 

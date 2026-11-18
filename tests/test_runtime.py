@@ -25,6 +25,7 @@ from billionsend import (
     APIError,
     APITimeoutError,
     AsyncBillionSend,
+    AuthenticationError,
     BillionSend,
     BillionSendError,
     InboxStreamEvent,
@@ -779,3 +780,65 @@ async def test_async_a_body_that_cannot_be_decoded_is_retried(
     answer: Any = await client.usage.get()
     assert answer == {"ok": True}
     await http.aclose()
+
+
+@pytest.mark.parametrize("padding", ["\n", "\r\n", " ", "\t", " \n "])
+def test_an_api_key_with_surrounding_whitespace_goes_out_trimmed(
+    mock: ContractMock, padding: str
+) -> None:
+    for key in (API_KEY + padding, padding + API_KEY + padding):
+        http = httpx.Client(transport=mock.transport())
+        BillionSend(key, base_url=BASE_URL, http_client=http).usage.get()
+        assert mock.last.request.headers["authorization"] == f"Bearer {API_KEY}"
+
+
+@pytest.mark.parametrize("padding", ["\n", "\r\n", " ", "\t", " \n "])
+async def test_async_an_api_key_with_surrounding_whitespace_goes_out_trimmed(
+    mock: ContractMock, padding: str
+) -> None:
+    http = httpx.AsyncClient(transport=mock.transport())
+    await AsyncBillionSend(
+        padding + API_KEY + padding, base_url=BASE_URL, http_client=http
+    ).usage.get()
+    assert mock.last.request.headers["authorization"] == f"Bearer {API_KEY}"
+    await http.aclose()
+
+
+def test_an_api_key_from_the_environment_is_trimmed_too(
+    mock: ContractMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("BILLIONSEND_API_KEY", API_KEY + "\n")
+    http = httpx.Client(transport=mock.transport())
+    BillionSend(base_url=BASE_URL, http_client=http).usage.get()
+    assert mock.last.request.headers["authorization"] == f"Bearer {API_KEY}"
+
+
+@pytest.mark.parametrize("blank", ["", " ", "\n", " \t\r\n "])
+def test_a_key_of_only_whitespace_is_no_key(
+    mock: ContractMock, monkeypatch: pytest.MonkeyPatch, blank: str
+) -> None:
+    monkeypatch.setenv("BILLIONSEND_API_KEY", API_KEY)  # the parameter wins, even when blank
+    http = httpx.Client(transport=mock.transport())
+    with pytest.raises(AuthenticationError) as info:
+        BillionSend(blank, base_url=BASE_URL, http_client=http).usage.get()
+    assert info.value.name == "missing_api_key"
+    monkeypatch.setenv("BILLIONSEND_API_KEY", blank)
+    with pytest.raises(AuthenticationError):
+        BillionSend(base_url=BASE_URL, http_client=http).usage.get()
+    assert mock.calls == []
+
+
+async def test_async_a_key_of_only_whitespace_is_no_key(mock: ContractMock) -> None:
+    http = httpx.AsyncClient(transport=mock.transport())
+    with pytest.raises(AuthenticationError):
+        await AsyncBillionSend(" \n", base_url=BASE_URL, http_client=http).usage.get()
+    assert mock.calls == []
+    await http.aclose()
+
+
+@pytest.mark.parametrize("key", ["bs_a\nX-Evil: 1", "bs_a\rb", "bs_a\x00b", "bs_a\x7fb"])
+def test_a_key_with_a_control_character_inside_is_refused(key: str) -> None:
+    with pytest.raises(ValueError, match="control characters"):
+        BillionSend(key, base_url=BASE_URL)
+    with pytest.raises(ValueError, match="control characters"):
+        AsyncBillionSend(key, base_url=BASE_URL)

@@ -14,6 +14,8 @@ The account is a real company account, so the rules are part of the code:
   by the cleanup that runs even when a test fails; the last test lists what is left;
 * mail goes only from ``SDK E2E <sdk-e2e@mail.billionsend.dev>`` and only to the
   success simulator (``success+sdk-e2e-…@simulator.amazonses.com``), at most 20 mails;
+  the harness refuses any other recipient (to, cc, bcc), and any address this run put on the
+  suppression list, before the request is sent (``Ledger.guard_mail``);
 * no domain is created or claimed, no broadcast is sent, no inbox is touched, no contact
   is unsubscribed (that is permanent), no webhook secret or key of the account is changed;
 * 150 requests at most for the whole run, one a second, and the run stops when the API

@@ -209,6 +209,18 @@ def _merge(headers: dict[str, str], more: Mapping[str, str]) -> None:
         headers[name] = value
 
 
+def _clean_key(key: str | None) -> str | None:
+    """The key as it goes into the header: a key read from a file or ``.env`` ends in a
+    newline, so surrounding whitespace is dropped and a key of only whitespace is no key.
+    A control character inside it could end the header line, so it is refused."""
+    if key is None:
+        return None
+    key = key.strip()
+    if any(ord(c) < 32 or ord(c) == 127 for c in key):
+        raise ValueError("The API key must not contain control characters")
+    return key or None
+
+
 class BaseClient:
     api_key: str | None
     base_url: str
@@ -226,7 +238,9 @@ class BaseClient:
     ) -> None:
         if max_retries < 0:
             raise ValueError("max_retries must be 0 or more")
-        self.api_key = api_key if api_key is not None else os.environ.get("BILLIONSEND_API_KEY")
+        self.api_key = _clean_key(
+            api_key if api_key is not None else os.environ.get("BILLIONSEND_API_KEY")
+        )
         resolved = base_url or os.environ.get("BILLIONSEND_BASE_URL") or DEFAULT_BASE_URL
         self.base_url = resolved.rstrip("/")
         self.timeout = timeout

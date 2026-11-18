@@ -15,11 +15,15 @@ be cleaned up; each test fails at its end if its calls broke the contract.
 from __future__ import annotations
 
 import asyncio
+import json
+import re
 import threading
 import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from email.utils import parseaddr
+from typing import Any
 
 import httpx
 from tests.contract import check_request, find_operation, validate
@@ -30,6 +34,51 @@ MAX_REQUESTS = 150
 TEST_BUDGET = 116
 MIN_GAP = 1.05
 MAX_429_IN_A_ROW = 2
+
+
+class UnsafeMail(Exception):
+    """A request that would mail an address this suite may not mail: it is not sent."""
+
+
+# The only recipients the suite may mail: the success simulator and its plus aliases.
+SIMULATOR_RECIPIENT = re.compile(r"success(\+[^@\s]+)?@simulator\.amazonses\.com", re.IGNORECASE)
+RECIPIENT_FIELDS = ("to", "cc", "bcc")
+
+
+def address_of(value: str) -> str:
+    """The bare address of ``"Name <a@b>"`` or ``"a@b"``, lower-cased."""
+    return (parseaddr(value)[1] or value).strip().lower()
+
+
+def recipients(body: Any) -> list[str]:
+    """Every address under a ``to`` / ``cc`` / ``bcc`` key, at any depth of a JSON body (a
+    batch is a list of mails). A value without an ``@`` (an automation's ``"to": "pause"``
+    names a step, not an address) is not an address."""
+    found: list[str] = []
+    if isinstance(body, dict):
+        for key, value in body.items():
+            if key in RECIPIENT_FIELDS:
+                items = value if isinstance(value, list) else [value]
+                found += [i for i in items if isinstance(i, str) and "@" in i]
+            found += recipients(value)
+    elif isinstance(body, list):
+        for item in body:
+            found += recipients(item)
+    return found
+
+
+# The calls that put addresses on the suppression list, and the body field holding them.
+SUPPRESSING_CALLS = {"/suppressions": "email", "/suppressions/batch/add": "emails"}
+
+
+def suppressed_by(request: httpx.Request, body: Any) -> list[str]:
+    """The addresses a request puts on the suppression list."""
+    field_name = SUPPRESSING_CALLS.get(request.url.path)
+    if request.method != "POST" or field_name is None or not isinstance(body, dict):
+        return []
+    value = body.get(field_name)
+    items = value if isinstance(value, list) else [value]
+    return [address_of(i) for i in items if isinstance(i, str)]
 
 
 class BudgetExceeded(Exception):
@@ -54,8 +103,29 @@ class Ledger:
     checked_answers: int = 0
     violations: list[str] = field(default_factory=list)
     calls: list[tuple[str, int]] = field(default_factory=list)
+    # Every address this run put on the suppression list, kept even after it is taken off
+    # again: a suppressed address is never mailed.
+    suppressed: set[str] = field(default_factory=set)
     _last: float = 0.0
     _lock: threading.Lock = field(default_factory=threading.Lock)
+
+    def guard_mail(self, request: httpx.Request) -> None:
+        """Refuse, before anything is sent or counted, a request that mails an address that
+        is not the success simulator's, or one this run suppressed. Nothing switches it off:
+        not a dry run, not ``invalid_request()``."""
+        try:
+            body = json.loads(request.content)
+        except ValueError:
+            return  # no JSON body (a multipart upload mails no one)
+        for address in recipients(body):
+            bare = address_of(address)
+            if not SIMULATOR_RECIPIENT.fullmatch(bare):
+                raise UnsafeMail(
+                    f"{request.method} {request.url.path}: {bare} is not the simulator"
+                )
+            if bare in self.suppressed:
+                raise UnsafeMail(f"{request.method} {request.url.path}: {bare} is suppressed")
+        self.suppressed.update(suppressed_by(request, body))
 
     def reserve(self) -> float:
         """Count one request and return how long to wait before sending it."""
@@ -154,6 +224,7 @@ class LiveTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
 
     def handle_request(self, request: httpx.Request) -> httpx.Response:
         request.read()
+        self.ledger.guard_mail(request)
         wait = self.ledger.reserve()
         if wait:
             time.sleep(wait)
@@ -166,6 +237,7 @@ class LiveTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
 
     async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
         await request.aread()
+        self.ledger.guard_mail(request)
         wait = self.ledger.reserve()
         if wait:
             await asyncio.sleep(wait)
