@@ -538,3 +538,48 @@ def test_an_id_sent_without_data_is_where_the_stream_resumes(
     with client.inboxes.events.stream_inbox("a@example.com") as stream:
         assert [e.id for e in stream] == ["11"]
     assert [c.request.headers.get("last-event-id") for c in mock.calls] == [None, "10"]
+
+
+@pytest.mark.parametrize(
+    "first",
+    [
+        "id: 5\n\n",  # a quiet stream: the id-only block the server writes on a fresh connection
+        ev("4") + "id: 5\n\n",  # an event, then a position
+    ],
+)
+def test_an_id_sent_without_data_survives_a_dropped_connection(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps, first: str
+) -> None:
+    mock.respond("GET", INBOX, headers=SSE, stream=sse(first, error=httpx.ReadError("reset")))
+    mock.respond("GET", INBOX, headers=SSE, stream=sse(ev("6", 1, "inbox.deleted")))
+    with client.inboxes.events.stream_inbox("a@example.com") as stream:
+        assert [e.id for e in stream] == (["4", "6"] if first.startswith("id: 4") else ["6"])
+    assert [c.request.headers.get("last-event-id") for c in mock.calls] == [None, "5"]
+
+
+async def test_async_an_id_sent_without_data_survives_a_dropped_connection(
+    async_client: AsyncBillionSend, mock: ContractMock
+) -> None:
+    mock.respond("GET", INBOX, headers=SSE, stream=sse("id: 5\n\n", error=httpx.ReadError("reset")))
+    mock.respond("GET", INBOX, headers=SSE, stream=sse(ev("6", 1, "inbox.deleted")))
+    stream = await async_client.inboxes.events.stream_inbox("a@example.com")
+    assert [e.id async for e in stream] == ["6"]
+    assert [c.request.headers.get("last-event-id") for c in mock.calls] == [None, "5"]
+
+
+def test_an_id_block_cut_before_its_blank_line_does_not_move_the_position(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    """``id: 7`` cut off before its data is an event that never arrived: resuming at 7 skips it."""
+    mock.respond(
+        "GET",
+        INBOX,
+        headers=SSE,
+        stream=sse(
+            ev("5"), "id: 7\nevent: inbox.email.received\ndata: {", error=httpx.ReadError("x")
+        ),
+    )
+    mock.respond("GET", INBOX, headers=SSE, stream=sse(ev("7", 1, "inbox.deleted")))
+    with client.inboxes.events.stream_inbox("a@example.com") as stream:
+        assert [e.id for e in stream] == ["5", "7"]
+    assert [c.request.headers.get("last-event-id") for c in mock.calls] == [None, "5"]

@@ -351,11 +351,16 @@ class ContractMock:
         if json_body is not None and status >= 400:
             validate(json_body, {"$ref": "#/components/schemas/ErrorResponse"}, "queued error")
         elif json_body is not None and op.has_success():
-            _, media, schema = op.success()
-            if media == "application/json" and schema is not None:
-                success_schema = op.spec["responses"].get(str(status), {})
-                schema = success_schema.get("content", {}).get(media, {}).get("schema", schema)
-                validate(json_body, schema, f"queued {method} {path} answer")
+            # A queued success is an answer the API could give: a status it documents, with
+            # the schema documented for that status. Nothing queued may be looser than that.
+            declared = op.spec["responses"].get(str(status))
+            assert declared is not None, (
+                f"{method} {path}: the API documents no {status} answer "
+                f"(only {sorted(op.spec['responses'])})"
+            )
+            media = declared.get("content", {}).get("application/json")
+            if media is not None and "schema" in media:
+                validate(json_body, media["schema"], f"queued {method} {path} answer")
         if stream is not None:
             response = httpx.Response(status, headers=headers, stream=stream)
         elif content is not None:

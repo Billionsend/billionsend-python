@@ -129,13 +129,23 @@ def test_timeout() -> None:
 
 def test_missing_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("BILLIONSEND_API_KEY", raising=False)
-    client = BillionSend(
-        base_url=BASE_URL, http_client=httpx.Client(transport=ContractMock().transport())
-    )
-    with pytest.raises(BillionSendError) as info:
+    mock = ContractMock()
+    client = BillionSend(base_url=BASE_URL, http_client=httpx.Client(transport=mock.transport()))
+    with pytest.raises(AuthenticationError) as info:
         client.usage.get()
     assert info.value.name == "missing_api_key"
-    assert info.value.status_code is None
+    assert info.value.status_code is None  # no answer came: nothing was sent
+    assert mock.calls == []
+
+
+async def test_async_missing_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("BILLIONSEND_API_KEY", raising=False)
+    client = AsyncBillionSend(base_url=BASE_URL)
+    with pytest.raises(AuthenticationError):
+        await client.usage.get()
+    with pytest.raises(AuthenticationError):
+        await client.inboxes.events.stream()
+    await client.close()
 
 
 async def test_async_error(async_client: AsyncBillionSend, mock: ContractMock) -> None:

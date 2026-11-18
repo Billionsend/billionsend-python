@@ -72,7 +72,7 @@ print(signup["inbox"]["email_address"], client.agent.status()["status"])
 
 ## Sending once
 
-Every sending method (`emails.send`, `emails.batch`, `emails.receiving.reply` and `.forward`, `inboxes.send`, `inboxes.threads.emails.reply` and `.forward`, `inboxes.drafts.send`) sends an `Idempotency-Key`. Without `idempotency_key=` the call makes up one (a UUID) and reuses it for its own retries, so a retry after a dropped connection never sends the email twice. Pass your own key to stay safe across calls too, for example when a job that sends may run again:
+Every sending method (`emails.send`, `emails.batch`, `emails.receiving.reply` and `.forward`, `inboxes.send`, `inboxes.threads.emails.reply` and `.forward`, `inboxes.drafts.send`) and `events.send` sends an `Idempotency-Key`. Without `idempotency_key=` the call makes up one (a UUID) and reuses it for its own retries, so a retry after a dropped connection never sends the email twice. Pass your own key to stay safe across calls too, for example when a job that sends may run again:
 
 ```python
 client.emails.send(message, idempotency_key=f"welcome/{user_id}")
@@ -121,7 +121,7 @@ Waiting for a sign-in code sent to the inbox is one call: `client.inboxes.codes.
 - `InboxStreamEvent`: `id` (the stream position), `event` (such as `"inbox.email.received"`) and `data`, a dict with `type`, `created_at`, `inbox_id` and `data` (the webhook payload of the same event).
 - `StreamGapEvent`: `event == "stream.gap"`, `id` is `None` and `data["reason"]` says why. The stream was resumed from a position older than the 24 hours the API replays, so some events may be missing: catch up through the lists (`client.inboxes.threads.list_all(inbox_id, read=False)`) before going on. It is handed out once per position.
 
-The server ends a stream every few minutes and connections drop; the stream reconnects on its own with `Last-Event-ID`, so no event is lost or repeated. `max_reconnects` bounds consecutive failed reconnects (default 5, `0` turns reconnecting off; 429 answers wait for their `Retry-After`). An error that reconnecting cannot fix, such as a revoked key, is raised from the loop. One inbox's stream ends after that inbox's `inbox.deleted` or `inbox.expired` event.
+The server ends a stream every few minutes and connections drop; the stream reconnects on its own with `Last-Event-ID`, so no event is lost or repeated. The server sends a keepalive every 15 seconds, so a connection that has been silent for a minute (a NAT or proxy that dropped it without a reset) is dropped and reconnected the same way. `max_reconnects` bounds consecutive failed reconnects (default 5, `0` turns reconnecting off; 429 answers wait for their `Retry-After`). An error that reconnecting cannot fix, such as a revoked key, is raised from the loop. One inbox's stream ends after that inbox's `inbox.deleted` or `inbox.expired` event.
 
 To pick up where a process left off, keep `stream.last_event_id` and pass it back:
 
@@ -242,19 +242,19 @@ except BillionSendError as err:
 | Status | Exception |
 | --- | --- |
 | 400, 422 | `ValidationError` |
-| 401 | `AuthenticationError` |
+| 401, and no API key at all | `AuthenticationError` (without a key the error is raised before any request, with `name` `"missing_api_key"` and no `status_code`) |
 | 403 | `PermissionDeniedError` |
 | 404 | `NotFoundError` |
 | 409 | `ConflictError` |
 | 429 | `RateLimitError` (`retry_after` in seconds) |
 | 5xx | `APIError` |
-| no answer | `APIConnectionError`, and `APITimeoutError` (a subclass) for timeouts; `status_code` and `request_id` are `None` |
+| no answer, or one that cannot be read (a broken gzip body) | `APIConnectionError`, and `APITimeoutError` (a subclass) for timeouts; `status_code` and `request_id` are `None` |
 
-An answer that is not JSON keeps the same shape, with `name` set to `"application_error"`. `WebhookVerificationError` (`name` `"webhook_verification_error"`) is a `BillionSendError` too.
+An answer that is not JSON keeps the same shape, with `name` set to `"application_error"`. A success with no body at all (a 204) returns `None`. `WebhookVerificationError` (`name` `"webhook_verification_error"`) is a `BillionSendError` too.
 
 ## Retries
 
-A request is retried when repeating it is safe: GET, PUT and DELETE, and any request carrying an idempotency key (every send does). It is retried on 429, on 5xx, when no answer came back (connection failure, timeout), and, for a keyed request, on 409 `concurrent_idempotent_requests` (a retry that caught the first attempt still running). The wait is the answer's `Retry-After` when there is one, otherwise exponential backoff with jitter (0.5 s, 1 s, 2 s… up to 8 s). An answer asking to wait more than 60 seconds, such as a used-up daily quota, is raised at once. `max_retries` (default 2) bounds the retries of one call; `0` turns them off.
+A request is retried when repeating it is safe: GET, PUT and DELETE, and any request carrying an idempotency key (every send does, and `events.send`). It is retried on 429, on 5xx, when no answer came back (connection failure, timeout), and, for a keyed request, on 409 `concurrent_idempotent_requests` (a retry that caught the first attempt still running). The wait is the answer's `Retry-After` when there is one, otherwise exponential backoff with jitter (0.5 s, 1 s, 2 s… up to 8 s). An answer asking to wait more than 60 seconds, such as a used-up daily quota, is raised at once. `max_retries` (default 2) bounds the retries of one call; `0` turns them off.
 
 ## Configuration
 

@@ -43,6 +43,7 @@ import pytest
 from tests.contract import SNAPSHOT
 
 from billionsend import (
+    APITimeoutError,
     AuthenticationError,
     BillionSend,
     ConflictError,
@@ -602,6 +603,51 @@ def test_the_readme_async_example_and_the_async_client(
     )
     live.clients_for_snippets(monkeypatch)
     run_readme(source)
+
+
+def test_the_readme_stream_resume_example(live: Live, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The team's event stream only reads (no inbox is touched). A fresh connection says where
+    it started before any event, so a quiet stream still has a position to resume from."""
+    stream = live.client.inboxes.events.stream(timeout=httpx.Timeout(10, read=2), max_reconnects=0)
+    seen = 0
+    try:
+        for _ in stream:  # the team's own events, if any, until two seconds of silence
+            seen += 1
+            if seen >= 20:
+                break
+    except APITimeoutError:
+        pass
+    finally:
+        stream.close()
+    position = stream.last_event_id
+    ok(position, "the stream gave no position to resume from")
+
+    live.clients_for_snippets(monkeypatch)
+    scope = run_readme(
+        readme_block("last_event_id=saved_position"), client=BillionSend(), saved_position=position
+    )
+    scope["stream"].close()
+
+
+# Examples the live rules at the top do not allow to run, and why: each would create what the
+# rules forbid (an inbox, a new account).
+EXCUSED_README_EXAMPLES = {
+    "BillionSend().agent.signup": "creates a new account and its inbox",
+    "def answer(question: str)": "creates an inbox and answers mail sent to it",
+}
+
+
+def test_every_readme_example_is_run_here_or_excused() -> None:
+    source = Path(__file__).read_text(encoding="utf-8")
+    markers = [
+        *re.findall(r'readme_block\(\s*(?:"((?:[^"\\]|\\.)*)"|\'([^\']*)\')', source),
+    ]
+    run = [(a or b).encode().decode("unicode_escape") for a, b in markers]
+    blocks = re.findall(r"```python\n(.*?)```", README, re.S)
+    for block in blocks:
+        ran = any(marker in block for marker in run)
+        excused = any(marker in block for marker in EXCUSED_README_EXAMPLES)
+        assert ran != excused, f"a README example is neither run live nor excused:\n{block[:200]}"
 
 
 # ----------------------------------------------------------------------------------

@@ -151,10 +151,14 @@ def kwarg_name(method: Any, name: str) -> str:
 
 
 def path_values(spec: Spec) -> list[str]:
+    """One distinct value per path parameter, so that two of them swapped changes the request."""
     values = []
     for i, p in enumerate(spec.path_params):
         schema = resolve(p["schema"])
-        values.append(native(schema) if "format" in schema else f"{AWKWARD}{i}")
+        if schema.get("format") == "uuid":
+            values.append(f"0b6f5a2e-7c1d-4e8a-9f3b-2d4c6e8a{i:04x}")
+        else:
+            values.append(native(schema) if "format" in schema else f"{AWKWARD}{i}")
     return values
 
 
@@ -436,10 +440,28 @@ def test_every_cursor_list_can_be_walked_both_ways(
 # ----------------------------------------------------- path values in the middle
 
 
-def test_an_empty_path_parameter_is_refused_before_any_request(
-    api: Api, mock: ContractMock
+@pytest.mark.parametrize("bad", ["", ".", ".."])
+def test_a_path_parameter_that_names_another_route_is_refused_before_any_request(
+    api: Api, mock: ContractMock, bad: str
 ) -> None:
+    """``emails.get("")`` would be ``GET /emails/`` and ``emails.get("..")`` would be
+    ``GET /`` after the URL is normalised: neither is the call that was asked for."""
     spec = next(s for s in SPECS if s.id == "GET /contacts/{id}")
     with pytest.raises(ValueError, match="path parameter"):
-        invoke(api, spec, values=[""])
+        invoke(api, spec, values=[bad])
     assert mock.calls == []
+
+
+# ------------------------------------------------ the mock holds its own answers to the contract
+
+
+def test_the_mock_refuses_a_queued_answer_that_breaks_the_contract(mock: ContractMock) -> None:
+    with pytest.raises(AssertionError, match="does not match the contract"):
+        mock.respond("GET", "/usage", 200, json_body={"emails": "many"})
+    spec = next(s for s in SPECS if s.id == "GET /usage")
+    valid = example(spec.success_codes()[0][1])
+    with pytest.raises(AssertionError, match="documents no 201"):
+        mock.respond("GET", "/usage", 201, json_body=valid)
+    with pytest.raises(AssertionError, match="does not match the contract"):
+        mock.respond("GET", "/usage", 403, json_body={"name": "x"})  # not the error shape
+    mock.respond("GET", "/usage", 200, json_body=valid)

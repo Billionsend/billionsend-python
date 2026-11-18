@@ -177,3 +177,37 @@ async def test_the_async_path_is_checked_too() -> None:
     await http.aclose()
     assert len(led.violations) == 1
     assert led.requests == 1
+
+
+def test_an_event_stream_is_not_read_to_its_end() -> None:
+    """A stream never ends by itself: the transport hands it on unread, and the call is
+    counted and its status checked like any other."""
+    ended: list[bool] = []
+
+    class Long(httpx.SyncByteStream):
+        def __iter__(self) -> Any:
+            yield b"id: 1\n\n"
+            for _ in range(30):  # stands for "forever": reading it all takes 0.6 s
+                time.sleep(0.02)
+                yield b": keepalive\n\n"
+            ended.append(True)
+
+    led = ledger()
+    c = client(
+        led,
+        lambda r: httpx.Response(200, headers={"content-type": "text/event-stream"}, stream=Long()),
+    )
+    stream = c.inboxes.events.stream(max_reconnects=0)
+    assert ended == []  # opening it did not read it
+    stream.close()
+    assert (led.requests, led.violations) == (1, [])
+    assert led.calls == [("GET /inboxes/events", 200)]
+
+
+def test_a_refused_event_stream_is_still_read_and_checked() -> None:
+    led = ledger()
+    body = {"statusCode": 429, "name": "rate_limit_exceeded", "message": "cap"}
+    c = client(led, lambda r: httpx.Response(429, json=body))
+    with pytest.raises(Exception, match="cap"):
+        c.inboxes.events.stream(max_reconnects=0)
+    assert led.violations == []

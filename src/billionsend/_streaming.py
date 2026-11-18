@@ -27,7 +27,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypedDict, cast
 
 import httpx
 
-from ._base_client import connection_error
+from ._base_client import READ_ERRORS, connection_error
 from ._exceptions import APIConnectionError, APIError, BillionSendError, RateLimitError
 
 if TYPE_CHECKING:
@@ -129,7 +129,10 @@ class SSEDecoder:
         self._after_cr = False
         self._data: list[str] = []
         self._event = ""
+        # The position: set when a block ends (its blank line), not when its ``id`` line
+        # is read, so a block cut off midway never moves it past an event that did not arrive.
         self.last_event_id: str | None = None
+        self._pending_id: str | None = None
         self.retry: int | None = None
 
     def feed(self, chunk: bytes) -> list[ServerSentEvent]:
@@ -165,6 +168,9 @@ class SSEDecoder:
 
     def _line(self, line: str) -> ServerSentEvent | None:
         if line == "":
+            if self._pending_id is not None:
+                self.last_event_id = self._pending_id
+                self._pending_id = None
             return self._dispatch()
         if line.startswith(":"):
             return None
@@ -176,7 +182,7 @@ class SSEDecoder:
             self._event = value
         elif name == "id":
             if "\0" not in value:
-                self.last_event_id = value
+                self._pending_id = value
         elif name == "retry" and value.isdigit():
             self.retry = int(value)
         return None
@@ -257,8 +263,10 @@ class _StreamState:
             self.closed = True
         return event
 
-    def saw_end(self, decoder: SSEDecoder) -> None:
-        # Every event was handed out; an id sent without data still moves the position.
+    def saw_position(self, decoder: SSEDecoder) -> None:
+        """Every event read so far was handed out: an id sent without data (the server
+        writes one when a stream opens, so that a connection that drops before its first
+        event still resumes from there) moves the position too."""
         if decoder.last_event_id is not None:
             self.last_event_id = decoder.last_event_id
 
@@ -335,9 +343,8 @@ class EventStream:
                             break
                     if s.closed:
                         break
-                else:
-                    s.saw_end(decoder)
-            except httpx.TransportError as exc:
+                    s.saw_position(decoder)
+            except READ_ERRORS as exc:
                 error = connection_error(exc)
             finally:
                 s.absorb_retry(decoder)
@@ -437,9 +444,8 @@ class AsyncEventStream:
                             break
                     if s.closed:
                         break
-                else:
-                    s.saw_end(decoder)
-            except httpx.TransportError as exc:
+                    s.saw_position(decoder)
+            except READ_ERRORS as exc:
                 error = connection_error(exc)
             finally:
                 s.absorb_retry(decoder)

@@ -97,6 +97,8 @@ class Ledger:
         if documented is None:
             self.violations.append(f"{where}: status {status} is not documented")
             return
+        if response.headers.get("content-type", "").startswith("text/event-stream"):
+            return  # an event stream is not read here: it ends when the client closes it
         media = documented.get("content", {}).get("application/json")
         if media is None:
             return
@@ -119,6 +121,13 @@ class Ledger:
             yield
         finally:
             self.invalid_allowed -= 1
+
+
+def _is_stream(response: httpx.Response) -> bool:
+    """An event stream never ends by itself: reading it whole would wait forever."""
+    return response.status_code < 400 and response.headers.get("content-type", "").startswith(
+        "text/event-stream"
+    )
 
 
 class LiveTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
@@ -150,7 +159,8 @@ class LiveTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
             time.sleep(wait)
         self.ledger.check_request(request)
         response = self._sync.handle_request(request)
-        response.read()
+        if not _is_stream(response):
+            response.read()
         self.ledger.answered(request, response)
         return response
 
@@ -161,6 +171,7 @@ class LiveTransport(httpx.BaseTransport, httpx.AsyncBaseTransport):
             await asyncio.sleep(wait)
         self.ledger.check_request(request)
         response = await self._async.handle_async_request(request)
-        await response.aread()
+        if not _is_stream(response):
+            await response.aread()
         self.ledger.answered(request, response)
         return response

@@ -42,6 +42,7 @@ class WebhookEvent(TypedDict):
 
 def _secret_key(secret: str) -> bytes:
     """Key bytes of a ``whsec_`` secret: canonical base64 of 24 to 64 bytes, else ValueError."""
+    secret = secret.strip()  # read from a file or an environment variable: a trailing newline
     if not secret.startswith(SECRET_PREFIX):
         raise ValueError("A webhook secret starts with whsec_")
     encoded = secret[len(SECRET_PREFIX) :]
@@ -59,8 +60,8 @@ def _secret_key(secret: str) -> bytes:
 def _header(headers: Mapping[str, str], name: str) -> str | None:
     """A header's value, whatever the case of its name in ``headers``."""
     for key, value in headers.items():
-        if key.lower() == name and value:
-            return value
+        if key.lower() == name and value.strip():
+            return value.strip()
     return None
 
 
@@ -105,7 +106,7 @@ def verify_webhook(
     body = payload if isinstance(payload, bytes) else payload.encode("utf-8")
     signed = f"{msg_id}.{timestamp}.".encode() + body
     expected = hmac.new(key, signed, hashlib.sha256).digest()
-    for candidate in signatures.split(" "):
+    for candidate in signatures.split():
         version, _, encoded = candidate.partition(",")
         if version != "v1" or not encoded:
             continue

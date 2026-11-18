@@ -33,6 +33,7 @@ from billionsend import (
 )
 from billionsend._base_client import (
     MAX_RETRY_DELAY,
+    STREAM_READ_TIMEOUT,
     encode_form,
     encode_path,
     encode_query,
@@ -103,6 +104,14 @@ def test_an_empty_path_segment_is_refused() -> None:
         encode_path("")
 
 
+@pytest.mark.parametrize("value", [".", ".."])
+def test_a_dot_path_segment_is_refused(value: str) -> None:
+    with pytest.raises(ValueError, match="path parameter"):
+        encode_path(value)
+    assert encode_path("...") == "..."  # only the two that a URL folds away
+    assert encode_path("a.b") == "a.b"
+
+
 def test_query_values() -> None:
     assert encode_query(None) == []
     assert encode_query(
@@ -116,6 +125,12 @@ def test_an_empty_list_filter_is_not_sent(client: BillionSend, mock: ContractMoc
 
 
 # ------------------------------------------------------------------ multipart
+
+
+def test_a_line_break_in_a_file_name_cannot_end_the_header_line() -> None:
+    data, files = encode_form({"f": ("a\r\nX-Evil: 1\n.csv", b"x", "text/csv")})
+    assert data == {}
+    assert files == [("f", ("a%0D%0AX-Evil: 1%0A.csv", b"x", "text/csv"))]
 
 
 def test_form_fields() -> None:
@@ -169,6 +184,18 @@ def test_upload_with_a_non_ascii_file_name(client: BillionSend, mock: ContractMo
     part = _parts(mock.last.request)["file"]
     assert part.get_filename() == "联系人 %22q%22.csv"
     assert part.get_content_type() == "text/csv"
+
+
+def test_a_file_name_goes_out_as_utf8_between_quotes_and_never_as_an_encoded_word(
+    client: BillionSend, mock: ContractMock
+) -> None:
+    client.contacts.imports.create({"file": ('联系人 "q"\r\nX: y.csv', b"Email\na@example.com\n")})
+    raw = mock.last.request.content
+    disposition = "联系人 %22q%22%0D%0AX: y.csv".encode()
+    assert b'name="file"; filename="' + disposition + b'"\r\n' in raw
+    assert b"=?" not in raw  # no RFC 2047 encoded word
+    assert b"filename*" not in raw
+    assert b"\r\nX: y.csv" not in raw  # the name did not start a header line of its own
 
 
 def test_upload_without_a_name_is_still_a_file(client: BillionSend, mock: ContractMock) -> None:
@@ -232,13 +259,29 @@ def test_the_error_repr_names_everything(client: BillionSend, mock: ContractMock
 
 
 @pytest.mark.parametrize("status", [200, 201, 204])
-def test_an_empty_success_body_is_an_error_not_none(
-    client: BillionSend, mock: ContractMock, status: int
+@pytest.mark.parametrize("content", [b"", b"  \n"])
+def test_a_success_with_no_body_is_none_not_a_parse_error(
+    client: BillionSend, mock: ContractMock, status: int, content: bytes
 ) -> None:
-    mock.respond("GET", "/usage", status, content=b"")
+    mock.respond("GET", "/usage", status, content=content)
+    assert client.usage.get() is None
+    assert len(mock.calls) == 1  # the call worked: nothing to retry
+
+
+async def test_async_a_success_with_no_body_is_none(
+    async_client: AsyncBillionSend, mock: ContractMock
+) -> None:
+    mock.respond("GET", "/usage", 204, content=b"")
+    assert await async_client.usage.get() is None
+
+
+def test_a_success_that_is_not_json_is_still_an_error(
+    client: BillionSend, mock: ContractMock
+) -> None:
+    mock.respond("GET", "/usage", 200, content=b"<html>", headers={"content-type": "text/html"})
     with pytest.raises(BillionSendError, match="Expected a JSON answer") as info:
         client.usage.get()
-    assert info.value.status_code == status
+    assert info.value.status_code == 200
 
 
 # ------------------------------------------------------------------ retries
@@ -400,6 +443,9 @@ class Script(BaseHTTPRequestHandler):
         if step.get("cut"):
             self.connection.shutdown(socket.SHUT_RDWR)
             return
+        if step.get("then_hang"):  # the connection stays open and silent
+            time.sleep(step["then_hang"])
+            return
         self.wfile.write(b"0\r\n\r\n")
 
 
@@ -550,3 +596,186 @@ def test_a_real_stream_refused_with_a_retry_after_waits(
     with client.inboxes.events.stream_inbox("a@example.com") as stream:
         assert [e.event for e in stream] == ["inbox.deleted"]
     assert 4.0 in sleeps
+
+
+def _sse_event(id_: str, kind: str = "inbox.email.received") -> bytes:
+    data = {"type": kind, "created_at": "2026-11-16T09:00:00.000Z", "inbox_id": "i", "data": {}}
+    return f"id: {id_}\nevent: {kind}\ndata: {json.dumps(data)}\n\n".encode()
+
+
+def test_a_stream_that_goes_silent_is_reconnected_from_its_last_event(
+    server: tuple[str, type[Script]],
+) -> None:
+    """A dropped connection that never resets (a NAT, a proxy): the server sends a keepalive
+    every 15 seconds, so a read that waits longer means the connection is gone."""
+    url, handler = server
+    sse = {"content-type": "text/event-stream"}
+    handler.plan = [
+        {"headers": sse, "chunks": [b"retry: 10\n\n", _sse_event("1")], "then_hang": 3},
+        {"headers": sse, "chunks": [_sse_event("2", "inbox.deleted")]},
+    ]
+    client = real(url)
+    client._sleep = lambda seconds: None
+    started = time.monotonic()
+    with client.inboxes.events.stream_inbox(
+        "a@example.com", timeout=httpx.Timeout(5, read=0.3)
+    ) as stream:
+        events = list(stream)
+    assert time.monotonic() - started < 2.5
+    assert [e.id for e in events if isinstance(e, InboxStreamEvent)] == ["1", "2"]
+    assert [h.get("last-event-id") for h in handler.seen] == [None, "1"]
+
+
+def test_a_silent_stream_without_reconnecting_raises_the_timeout(
+    server: tuple[str, type[Script]],
+) -> None:
+    url, handler = server
+    handler.plan = [
+        {"headers": {"content-type": "text/event-stream"}, "chunks": [], "then_hang": 3}
+    ]
+    client = real(url)
+    with pytest.raises(APITimeoutError):
+        list(client.inboxes.events.stream(timeout=httpx.Timeout(5, read=0.3), max_reconnects=0))
+
+
+def test_a_stream_always_has_an_idle_timeout() -> None:
+    client = BillionSend(API_KEY, base_url=BASE_URL)
+    floor = httpx.Timeout(5, read=STREAM_READ_TIMEOUT)
+    assert client._stream_timeout(5) == floor  # a number: no read shorter than a minute
+    assert client._stream_timeout(httpx.Timeout(5, read=None)) == floor  # never forever
+    assert client._stream_timeout(httpx.Timeout(5, read=2)) == httpx.Timeout(5, read=2)
+    assert client._stream_timeout(None).read == STREAM_READ_TIMEOUT
+
+
+# ------------------------------------------------------------------ what the wire does wrong
+
+
+def test_a_body_that_cannot_be_decoded_is_a_connection_error(
+    server: tuple[str, type[Script]],
+) -> None:
+    url, handler = server
+    bad = {"content-type": "application/json", "content-encoding": "gzip"}
+    handler.plan = [{"headers": bad, "chunks": [b"this is not gzip"]}]
+    with pytest.raises(APIConnectionError) as info:
+        real(url, max_retries=0).usage.get()
+    assert not isinstance(info.value, httpx.HTTPError)
+    assert info.value.status_code is None
+    assert "response" in info.value.message
+
+
+def test_a_body_that_cannot_be_decoded_is_retried_like_any_lost_answer(
+    server: tuple[str, type[Script]],
+) -> None:
+    url, handler = server
+    bad = {"content-type": "application/json", "content-encoding": "gzip"}
+    good = {"content-type": "application/json"}
+    handler.plan = [
+        {"headers": bad, "chunks": [b"this is not gzip"]},
+        {"headers": good, "chunks": [b'{"ok":true}']},
+    ]
+    client = real(url)
+    client._sleep = lambda seconds: None
+    answer: Any = client.usage.get()
+    assert answer == {"ok": True}
+
+
+def test_a_refused_stream_with_an_undecodable_body_is_a_connection_error(
+    server: tuple[str, type[Script]],
+) -> None:
+    url, handler = server
+    bad = {"content-type": "application/json", "content-encoding": "gzip"}
+    handler.plan = [{"status": 502, "headers": bad, "chunks": [b"this is not gzip"]}]
+    with pytest.raises(APIConnectionError):
+        real(url).inboxes.events.stream()
+
+
+def test_a_stream_body_that_cannot_be_decoded_ends_as_a_dropped_connection(
+    server: tuple[str, type[Script]],
+) -> None:
+    url, handler = server
+    sse = {"content-type": "text/event-stream", "content-encoding": "gzip"}
+    handler.plan = [{"headers": sse, "chunks": [b"this is not gzip"]}]
+    stream = real(url).inboxes.events.stream(max_reconnects=0)
+    with pytest.raises(APIConnectionError):
+        list(stream)
+
+
+# ------------------------------------------------------------------ cancelling
+
+
+async def test_a_task_cancelled_before_it_runs_sends_nothing(
+    async_client: AsyncBillionSend, mock: ContractMock
+) -> None:
+    import asyncio
+
+    task = asyncio.ensure_future(async_client.usage.get())
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert mock.calls == []
+
+
+async def test_a_task_cancelled_while_it_waits_to_retry_sends_no_more(
+    mock: ContractMock,
+) -> None:
+    import asyncio
+
+    http = httpx.AsyncClient(transport=mock.transport())
+    client = AsyncBillionSend(API_KEY, base_url=BASE_URL, http_client=http)
+    mock.error("GET", "/usage", 503, "service_unavailable", "busy", headers={"retry-after": "30"})
+    task = asyncio.ensure_future(client.usage.get())
+    while not mock.calls:
+        await asyncio.sleep(0)
+    await asyncio.sleep(0.05)  # the first answer came and the retry is waiting out 30 s
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+    assert len(mock.calls) == 1
+    await http.aclose()
+
+
+async def test_a_timeout_around_a_call_stops_it_and_it_sends_no_more(mock: ContractMock) -> None:
+    import asyncio
+
+    http = httpx.AsyncClient(transport=mock.transport())
+    client = AsyncBillionSend(API_KEY, base_url=BASE_URL, http_client=http)
+    mock.error("GET", "/usage", 429, "rate_limit_exceeded", "slow", headers={"retry-after": "30"})
+    with pytest.raises(TimeoutError):
+        async with asyncio.timeout(0.2):
+            await client.usage.get()
+    assert len(mock.calls) == 1
+    await http.aclose()
+
+
+async def test_async_a_refused_stream_with_an_undecodable_body_is_a_connection_error(
+    server: tuple[str, type[Script]],
+) -> None:
+    url, handler = server
+    bad = {"content-type": "application/json", "content-encoding": "gzip"}
+    handler.plan = [{"status": 502, "headers": bad, "chunks": [b"this is not gzip"]}]
+    http = httpx.AsyncClient(trust_env=False)
+    client = AsyncBillionSend(API_KEY, base_url=url, http_client=http)
+    with pytest.raises(APIConnectionError):
+        await client.inboxes.events.stream()
+    await http.aclose()
+
+
+async def test_async_a_body_that_cannot_be_decoded_is_retried(
+    server: tuple[str, type[Script]],
+) -> None:
+    url, handler = server
+    bad = {"content-type": "application/json", "content-encoding": "gzip"}
+    handler.plan = [
+        {"headers": bad, "chunks": [b"this is not gzip"]},
+        {"headers": {"content-type": "application/json"}, "chunks": [b'{"ok":true}']},
+    ]
+    http = httpx.AsyncClient(trust_env=False)
+    client = AsyncBillionSend(API_KEY, base_url=url, http_client=http)
+
+    async def no_wait(seconds: float) -> None:
+        return None
+
+    client._sleep = no_wait  # type: ignore[method-assign]
+    answer: Any = await client.usage.get()
+    assert answer == {"ok": True}
+    await http.aclose()

@@ -19,6 +19,7 @@ from ._exceptions import (
     APIConnectionError,
     APIError,
     APITimeoutError,
+    AuthenticationError,
     BillionSendError,
     RateLimitError,
     error_class,
@@ -28,7 +29,7 @@ from ._version import __version__
 if TYPE_CHECKING:
     from ._streaming import AsyncEventStream, EventStream
 
-__all__ = ["AsyncAPIClient", "SyncAPIClient", "encode_path"]
+__all__ = ["READ_ERRORS", "AsyncAPIClient", "SyncAPIClient", "encode_path"]
 
 DEFAULT_BASE_URL = "https://api.billionsend.com"
 DEFAULT_TIMEOUT = 60.0
@@ -42,6 +43,10 @@ MAX_RETRY_DELAY = 60.0
 CONCURRENT_IDEMPOTENT = "concurrent_idempotent_requests"
 IDEMPOTENT_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "PUT", "DELETE"})
 
+# What httpx raises while it gets or reads an answer: the connection (``TransportError``)
+# and a body it cannot decode, such as broken gzip (``DecodingError``).
+READ_ERRORS = (httpx.TransportError, httpx.DecodingError)
+
 Timeout = float | httpx.Timeout
 QueryValue = str | int | float | bool | None
 
@@ -50,11 +55,16 @@ def encode_path(value: str) -> str:
     """Encode one path segment (an id, or an inbox address such as support@example.com).
 
     An empty value is refused: ``/emails/`` is the list, so a missing id would
-    quietly run another operation and hand back its answer.
+    quietly run another operation and hand back its answer. So are ``.`` and
+    ``..``: a URL folds them away (``/emails/..`` is ``/``), and the request
+    would go to another route.
     """
-    if str(value) == "":
+    text = str(value)
+    if text == "":
         raise ValueError("A path parameter cannot be empty")
-    return quote(str(value), safe="@")
+    if text in (".", ".."):
+        raise ValueError(f"A path parameter cannot be {text!r}")
+    return quote(text, safe="@")
 
 
 def encode_query(query: Mapping[str, Any] | None) -> list[tuple[str, QueryValue]]:
@@ -78,6 +88,14 @@ def encode_query(query: Mapping[str, Any] | None) -> list[tuple[str, QueryValue]
     return pairs
 
 
+def _named(file: tuple[Any, ...]) -> tuple[Any, ...]:
+    """A file tuple whose name cannot end its header line: a name is written between quotes
+    as UTF-8 (``"`` as ``%22`` by httpx); a line break in it becomes ``%0D`` / ``%0A``,
+    whatever httpx version writes it."""
+    name = str(file[0]).replace("\r", "%0D").replace("\n", "%0A")
+    return (name, *file[1:])
+
+
 def encode_form(
     form: Mapping[str, Any] | None,
 ) -> tuple[dict[str, str] | None, list[tuple[str, Any]] | None]:
@@ -96,7 +114,7 @@ def encode_form(
         if value is None:
             continue
         if isinstance(value, bytes | tuple) or hasattr(value, "read"):
-            files.append((key, value if isinstance(value, tuple) else (key, value)))
+            files.append((key, _named(value) if isinstance(value, tuple) else (key, value)))
         elif isinstance(value, dict | list):
             data[key] = json.dumps(value, separators=(",", ":"))
         elif isinstance(value, bool):
@@ -159,6 +177,10 @@ def error_from_response(response: httpx.Response) -> BillionSendError:
 
 
 def parse_json(response: httpx.Response) -> Any:
+    """The answer's JSON; ``None`` for a success with no body (a 204, say), which is
+    a call that worked, not a failure to read one."""
+    if not response.content.strip():
+        return None
     try:
         return response.json()
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
@@ -171,9 +193,11 @@ def parse_json(response: httpx.Response) -> Any:
         ) from exc
 
 
-def connection_error(exc: httpx.TransportError) -> APIConnectionError:
+def connection_error(exc: httpx.TransportError | httpx.DecodingError) -> APIConnectionError:
     if isinstance(exc, httpx.TimeoutException):
         return APITimeoutError(f"Request timed out: {exc}" if str(exc) else "Request timed out")
+    if isinstance(exc, httpx.DecodingError):
+        return APIConnectionError(f"Could not read the response: {exc}")
     return APIConnectionError(f"Connection error: {exc}" if str(exc) else "Connection error")
 
 
@@ -225,7 +249,7 @@ class BaseClient:
         out = {"Accept": accept, "User-Agent": f"billionsend-python/{__version__}"}
         if auth:
             if not self.api_key:
-                raise BillionSendError(
+                raise AuthenticationError(
                     "No API key: pass api_key= or set BILLIONSEND_API_KEY",
                     name="missing_api_key",
                 )
@@ -323,8 +347,18 @@ class BaseClient:
         )
 
     def _stream_timeout(self, timeout: Timeout | None) -> httpx.Timeout:
+        """The timeout of a stream's connection: its reads wait for the server's
+        keepalive, so a silent connection (a NAT or proxy that dropped it without
+        a reset) times out and the stream reconnects, and never waits forever."""
         chosen = self.timeout if timeout is None else timeout
         if isinstance(chosen, httpx.Timeout):
+            if chosen.read is None:
+                return httpx.Timeout(
+                    connect=chosen.connect,
+                    read=STREAM_READ_TIMEOUT,
+                    write=chosen.write,
+                    pool=chosen.pool,
+                )
             return chosen
         return httpx.Timeout(chosen, read=max(chosen, STREAM_READ_TIMEOUT))
 
@@ -393,7 +427,7 @@ class SyncAPIClient(BaseClient):
             cause: Exception | None = None
             try:
                 response = self._http.send(request)
-            except httpx.TransportError as exc:
+            except READ_ERRORS as exc:
                 error, cause = connection_error(exc), exc
             else:
                 if response.is_success:
@@ -456,11 +490,13 @@ class SyncAPIClient(BaseClient):
         )
         try:
             response = self._http.send(request, stream=True)
-        except httpx.TransportError as exc:
+        except READ_ERRORS as exc:
             raise connection_error(exc) from exc
         if not response.is_success:
             try:
                 response.read()
+            except READ_ERRORS as exc:
+                raise connection_error(exc) from exc
             finally:
                 response.close()
             raise error_from_response(response)
@@ -537,7 +573,7 @@ class AsyncAPIClient(BaseClient):
             cause: Exception | None = None
             try:
                 response = await self._http.send(request)
-            except httpx.TransportError as exc:
+            except READ_ERRORS as exc:
                 error, cause = connection_error(exc), exc
             else:
                 if response.is_success:
@@ -599,11 +635,13 @@ class AsyncAPIClient(BaseClient):
         )
         try:
             response = await self._http.send(request, stream=True)
-        except httpx.TransportError as exc:
+        except READ_ERRORS as exc:
             raise connection_error(exc) from exc
         if not response.is_success:
             try:
                 await response.aread()
+            except READ_ERRORS as exc:
+                raise connection_error(exc) from exc
             finally:
                 await response.aclose()
             raise error_from_response(response)

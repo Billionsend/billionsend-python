@@ -197,5 +197,34 @@ def test_signature_header_whitespace_and_the_message_id_matter() -> None:
 def test_the_secret_needs_its_prefix_in_exact_case() -> None:
     with pytest.raises(ValueError, match="starts with whsec_"):
         verify_webhook(PAYLOAD, HEADERS, SECRET.replace("whsec_", "WHSEC_"), now=TIMESTAMP)
-    with pytest.raises(ValueError, match="starts with whsec_"):
-        verify_webhook(PAYLOAD, HEADERS, " " + SECRET, now=TIMESTAMP)
+
+
+@pytest.mark.parametrize("padding", ["\n", "\r\n", " ", "\t", "  \n"])
+def test_a_secret_read_from_a_file_or_an_env_var_may_carry_whitespace(padding: str) -> None:
+    assert verify_webhook(PAYLOAD, HEADERS, SECRET + padding, now=TIMESTAMP)
+    assert verify_webhook(PAYLOAD, HEADERS, padding + SECRET + padding, now=TIMESTAMP)
+
+
+@pytest.mark.parametrize("padding", [" ", "\t", "\r\n", " \n "])
+def test_header_values_are_trimmed(padding: str) -> None:
+    headers = {k: padding + v + padding for k, v in HEADERS.items()}
+    assert verify_webhook(PAYLOAD, headers, SECRET, now=TIMESTAMP)
+
+
+@pytest.mark.parametrize("gap", ["  ", "\t", "\n", "\r\n", " \t "])
+def test_signatures_are_separated_by_any_whitespace(gap: str) -> None:
+    headers = {**HEADERS, "webhook-signature": f"v1,AAAA{gap}v2,x{gap}{SIGNATURE}"}
+    assert verify_webhook(PAYLOAD, headers, SECRET, now=TIMESTAMP)
+    headers = {**HEADERS, "webhook-signature": f"{SIGNATURE}{gap}v1,AAAA"}
+    assert verify_webhook(PAYLOAD, headers, SECRET, now=TIMESTAMP)
+
+
+def test_a_header_of_only_whitespace_is_a_missing_header() -> None:
+    for name in HEADERS:
+        with pytest.raises(WebhookVerificationError, match="Missing"):
+            verify_webhook(PAYLOAD, {**HEADERS, name: " \n"}, SECRET, now=TIMESTAMP)
+
+
+def test_trimming_does_not_let_a_changed_message_id_through() -> None:
+    with pytest.raises(WebhookVerificationError):
+        verify_webhook(PAYLOAD, {**HEADERS, "webhook-id": " msg_other "}, SECRET, now=TIMESTAMP)
