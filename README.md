@@ -97,8 +97,8 @@ def answer(question: str) -> str:
 
 with client.inboxes.events.stream_inbox(inbox["id"], types="inbox.email.received") as stream:
     for event in stream:
-        if not isinstance(event, InboxStreamEvent):
-            continue  # a StreamGapEvent: see below
+        if not isinstance(event, InboxStreamEvent) or event.event != "inbox.email.received":
+            continue  # a StreamGapEvent (see below), or the inbox.deleted / inbox.expired that ends the stream
         thread_id = event.data["data"]["thread_id"]
         email_id = event.data["data"]["email_id"]
         email = client.inboxes.threads.emails.get(inbox["id"], thread_id, email_id)
@@ -181,7 +181,7 @@ def billionsend_webhook():
 
 Each method is named after its operation's `operationId` in the API document: `emails.receiving.attachments.list` is `client.emails.receiving.attachments.list`, with camelCase written in snake_case (`agent.claimEmail` is `client.agent.claim_email`, `oauthGrants.list` is `client.oauth_grants.list`).
 
-Path parameters are positional (`client.domains.get(domain_id)`), the request body is a `dict` (`client.domains.create({"name": "acme.dev"})`) and query parameters are keyword arguments (`client.emails.list(limit=50)`). A parameter named after a Python keyword takes a trailing underscore (`from_=`). Every method also takes `extra_headers=` and `timeout=`.
+Path parameters are positional (`client.domains.get(domain_id)`), the request body is a `dict` (`client.domains.create({"name": "acme.dev"})`) and query parameters are keyword arguments (`client.emails.list(limit=50)`). A parameter named after a Python keyword takes a trailing underscore (`from_=`). An empty id raises `ValueError` before any request (the API answers `GET /emails/` with a 401 about the key, which sends you looking in the wrong place). Every method also takes `extra_headers=` and `timeout=`.
 
 ## Importing contacts from a CSV
 
@@ -275,9 +275,13 @@ Close the client with `client.close()` (`await client.close()`) or use it as a c
 uv sync
 uv run ruff check . && uv run ruff format --check .
 uv run mypy
-uv run pytest
+uv run coverage run -m pytest && uv run coverage json && uv run python scripts/check_coverage.py
 uv build
 ```
+
+`pytest` runs offline and `check_coverage.py` is the gate CI applies: at least 95 % line and branch coverage of the hand-written runtime, and every generated method called at least once. The suite also runs every Python example of this README as written.
+
+The live suite in `e2e/` runs the SDK against the real API and validates every answer against the published OpenAPI document. It is never run by CI and does nothing without a key: `BILLIONSEND_E2E_API_KEY=bs_... uv run pytest e2e`. It makes at most 150 requests (one a second), sends only to the Amazon SES success simulator, creates only objects named `sdk-e2e-python-…` and deletes them at the end (the rules are at the top of `e2e/test_live.py`; run it only against an account where that is acceptable).
 
 The SDK is built from a snapshot of the API's OpenAPI document, `openapi/api.openapi.json`. The snapshot is the contract: `scripts/generate.py` writes `src/billionsend/types.py` and the resource modules from it (method names from each `operationId`, idempotency keys where an operation declares the `Idempotency-Key` header, iterators for cursor lists), and the tests validate every request the SDK sends and every response it receives against it through a contract mock (`tests/contract.py`). A coverage test fails when an operation of the snapshot has no SDK method, or when the SDK calls something the snapshot does not declare.
 
@@ -289,7 +293,7 @@ uv run python scripts/generate.py
 uv run pytest
 ```
 
-Whatever fails is what the SDK has to follow. CI runs `scripts/generate.py --check` so the generated code never drifts from the snapshot, and `scripts/sync_openapi.py --check` (on every push and pull request, and every day) so the snapshot never drifts from the document published at https://billionsend.com/docs/api.openapi.json. The tests never touch the network.
+Whatever fails is what the SDK has to follow. CI runs `scripts/generate.py --check` so the generated code never drifts from the snapshot, and `scripts/sync_openapi.py --check` (on every push and pull request, and every day) so the snapshot never drifts from the document published at https://billionsend.com/docs/api.openapi.json. The default tests never reach the internet.
 
 ## Releasing
 

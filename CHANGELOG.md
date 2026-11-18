@@ -10,6 +10,9 @@ The OpenAPI snapshot is now the published document (https://billionsend.com/docs
 - The request and response types of 26 schemas follow the published document (contacts, domains, broadcasts, webhooks, templates, inboxes and more).
 - Multipart request bodies: a binary field (`FileUpload`) takes `bytes`, a binary file object or a `(file name, content[, content type])` tuple, and a JSON field (`JsonText`, such as `column_map` of a contact import) takes a `dict` or `list` (encoded by the SDK) or a `str` (sent as it is).
 - `scripts/sync_openapi.py --check` fails when the snapshot differs from the published document; CI runs it on every push and pull request and once a day.
+- An empty path parameter (`client.emails.get("")`) raises `ValueError` before any request. It used to send `GET /emails/`, which the API answers with 401 `missing_api_key` even for a valid key, so the error sent you to check the key instead of the empty id.
+- The README's agent example no longer fails with a `KeyError` when the inbox it watches is deleted or expires: those events reach every stream whatever `types=` asks for.
+- Tests: every operation is checked through the sync and the async client against the published schemas (formats included) for its request, its answers and each documented error; every Python example of the README is run; CI fails when line or branch coverage of the hand-written runtime is under 95 % or a generated method is never called; `e2e/` is a live suite (never run by CI) that checks every real answer against the published document.
 
 ## 0.1.1 (2026-11-17)
 

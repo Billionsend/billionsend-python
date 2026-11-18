@@ -145,3 +145,57 @@ def test_body_that_is_not_a_json_object_fails() -> None:
 def test_invalid_secret_is_a_value_error(secret: str) -> None:
     with pytest.raises(ValueError, match="webhook secret"):
         verify_webhook(PAYLOAD, HEADERS, secret, now=TIMESTAMP)
+
+
+def test_a_secret_with_non_canonical_base64_is_refused() -> None:
+    canonical = base64.b64encode(b"x" * 25).decode()
+    assert canonical.endswith("A==")
+    sloppy = "whsec_" + canonical[:-3] + "B=="  # same bytes, trailing bits set
+    assert base64.b64decode(sloppy.removeprefix("whsec_"), validate=True) == b"x" * 25
+    with pytest.raises(ValueError, match="webhook secret"):
+        verify_webhook(PAYLOAD, HEADERS, sloppy, now=TIMESTAMP)
+
+
+def _signed(body: str, secret: str = SECRET, msg_id: str = MSG_ID) -> dict[str, str]:
+    key = base64.b64decode(secret.removeprefix("whsec_"))
+    digest = hmac.new(key, f"{msg_id}.{TIMESTAMP}.{body}".encode(), hashlib.sha256).digest()
+    return {
+        "webhook-id": msg_id,
+        "webhook-timestamp": str(TIMESTAMP),
+        "webhook-signature": "v1," + base64.b64encode(digest).decode(),
+    }
+
+
+def test_a_correctly_signed_body_that_is_not_json_fails() -> None:
+    with pytest.raises(WebhookVerificationError, match="not JSON"):
+        verify_webhook("not json", _signed("not json"), SECRET, now=TIMESTAMP)
+
+
+def test_the_body_is_signed_as_bytes_whatever_its_characters() -> None:
+    body = '{"type":"email.sent","created_at":"x","data":{"subject":"héllo ✓ \\u00e9"}}'
+    assert verify_webhook(body, _signed(body), SECRET, now=TIMESTAMP)["type"] == "email.sent"
+    assert (
+        verify_webhook(body.encode(), _signed(body), SECRET, now=TIMESTAMP)["type"] == "email.sent"
+    )
+    with pytest.raises(WebhookVerificationError):
+        verify_webhook(body.replace("é", "e"), _signed(body), SECRET, now=TIMESTAMP)
+
+
+def test_an_empty_body_does_not_verify_as_json() -> None:
+    with pytest.raises(WebhookVerificationError, match="not JSON"):
+        verify_webhook("", _signed(""), SECRET, now=TIMESTAMP)
+
+
+def test_signature_header_whitespace_and_the_message_id_matter() -> None:
+    padded = {**HEADERS, "webhook-signature": f"  {SIGNATURE}   v1,AAAA  "}
+    assert verify_webhook(PAYLOAD, padded, SECRET, now=TIMESTAMP)
+    other_id = {**HEADERS, "webhook-id": "msg_other"}
+    with pytest.raises(WebhookVerificationError):
+        verify_webhook(PAYLOAD, other_id, SECRET, now=TIMESTAMP)
+
+
+def test_the_secret_needs_its_prefix_in_exact_case() -> None:
+    with pytest.raises(ValueError, match="starts with whsec_"):
+        verify_webhook(PAYLOAD, HEADERS, SECRET.replace("whsec_", "WHSEC_"), now=TIMESTAMP)
+    with pytest.raises(ValueError, match="starts with whsec_"):
+        verify_webhook(PAYLOAD, HEADERS, " " + SECRET, now=TIMESTAMP)

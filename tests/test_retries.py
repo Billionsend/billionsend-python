@@ -118,17 +118,17 @@ def test_send_makes_up_a_key_shared_by_its_retries(
         (
             "POST",
             "/inboxes/{inbox_id}/drafts/{draft_id}/send",
-            lambda c: c.inboxes.drafts.send("in_1", "dr_1"),
+            lambda c: c.inboxes.drafts.send("in_1", ID),
         ),
         (
             "POST",
             "/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/reply",
-            lambda c: c.inboxes.threads.emails.reply("in_1", "th_1", ID, {"text": "t"}),
+            lambda c: c.inboxes.threads.emails.reply("in_1", ID, ID, {"text": "t"}),
         ),
         (
             "POST",
             "/inboxes/{inbox_id}/threads/{thread_id}/emails/{email_id}/forward",
-            lambda c: c.inboxes.threads.emails.forward("in_1", "th_1", ID, {"to": "x@example.com"}),
+            lambda c: c.inboxes.threads.emails.forward("in_1", ID, ID, {"to": "x@example.com"}),
         ),
     ],
 )

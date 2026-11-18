@@ -498,3 +498,43 @@ async def test_async_drop_without_reconnect(
     stream = await async_client.inboxes.events.stream(max_reconnects=0)
     with pytest.raises(APIConnectionError):
         [e async for e in stream]
+
+
+def test_an_event_id_with_a_nul_is_ignored() -> None:
+    events, decoder = decode(b"id: a\0b\ndata: 1\n\n")
+    assert decoder.last_event_id is None
+    assert events[0].id is None
+
+
+def test_iterating_a_closed_stream_ends_at_once(client: BillionSend, mock: ContractMock) -> None:
+    stream = client.inboxes.events.stream()
+    stream.close()
+    assert list(stream) == []
+    assert len(mock.calls) == 1
+
+
+async def test_async_closed_stream_and_repeated_gap(
+    async_client: AsyncBillionSend, mock: ContractMock
+) -> None:
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(GAP))
+    mock.respond("GET", TEAM, headers=SSE, stream=sse(GAP, ev("2", 2)))
+    stream = await async_client.inboxes.events.stream(last_event_id="0")
+    seen: list[StreamEvent] = []
+    async for event in stream:
+        seen.append(event)
+        if len(seen) == 2:
+            break
+    assert [type(e).__name__ for e in seen] == ["StreamGapEvent", "InboxStreamEvent"]
+    assert len(mock.calls) == 2
+    await stream.close()
+    assert [e async for e in stream] == []
+
+
+def test_an_id_sent_without_data_is_where_the_stream_resumes(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.respond("GET", INBOX, headers=SSE, stream=sse("id: 10\n\n"))
+    mock.respond("GET", INBOX, headers=SSE, stream=sse(ev("11", 1, "inbox.deleted")))
+    with client.inboxes.events.stream_inbox("a@example.com") as stream:
+        assert [e.id for e in stream] == ["11"]
+    assert [c.request.headers.get("last-event-id") for c in mock.calls] == [None, "10"]

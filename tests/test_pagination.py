@@ -123,7 +123,7 @@ def test_thread_emails_of_either_direction(client: BillionSend, mock: ContractMo
     path = "/inboxes/{inbox_id}/threads/{thread_id}/emails"
     page(mock, path, IDS[0:2], True)
     page(mock, path, IDS[2:3], False)
-    seen = [e["id"] for e in client.inboxes.threads.emails.list_all("in_1", "th_1", limit=2)]
+    seen = [e["id"] for e in client.inboxes.threads.emails.list_all("in_1", IDS[0], limit=2)]
     assert seen == IDS[0:3]
     assert mock.calls[1].query == {"limit": ["2"], "after": [IDS[1]]}
 

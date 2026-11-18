@@ -29,7 +29,7 @@ from typing import Any
 from urllib.parse import unquote
 
 import httpx
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, FormatChecker
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT202012
 
@@ -69,8 +69,12 @@ def absolute(schema: Any) -> Any:
     return _absolute_refs(schema)
 
 
+FORMATS = FormatChecker()
+
+
 def validate(instance: Any, schema: Any, where: str) -> None:
-    validator = Draft202012Validator(absolute(schema), registry=REGISTRY)
+    """Check ``instance`` against ``schema``, formats (uuid, date-time, email…) included."""
+    validator = Draft202012Validator(absolute(schema), registry=REGISTRY, format_checker=FORMATS)
     errors = sorted(validator.iter_errors(instance), key=lambda e: list(e.path))
     if errors:
         details = "; ".join(f"{list(e.path)}: {e.message}" for e in errors[:5])
@@ -247,6 +251,81 @@ class ChunkStream(httpx.SyncByteStream, httpx.AsyncByteStream):
             raise self.error
 
 
+def check_request(request: httpx.Request, *, base_url: str, api_key: str | None = None) -> Recorded:
+    """Check a request against the snapshot and describe it.
+
+    The URL must lie under ``base_url`` and name an operation of the contract; the
+    path, query and header parameters and the JSON or multipart body must match the
+    operation's schemas; the key must be sent where the operation takes one (and
+    equal ``api_key`` when that is given).
+    """
+    assert str(request.url).startswith(base_url), f"unexpected host in {request.url}"
+    raw_path = request.url.raw_path.split(b"?", 1)[0].decode("ascii")
+    op, encoded = find_operation(request.method, raw_path)
+    path_params = {k: unquote(v) for k, v in encoded.items()}
+    where = f"{op.method} {op.path}"
+
+    # Authentication
+    auth = request.headers.get("authorization")
+    if op.needs_auth:
+        assert auth, f"{where}: missing Authorization header"
+        assert auth.startswith("Bearer "), f"{where}: Authorization is not a Bearer token"
+        if api_key is not None:
+            assert auth == f"Bearer {api_key}", f"{where}: wrong Authorization header"
+    else:
+        assert auth is None, f"{where}: must be sent without an API key"
+
+    # Path parameters
+    for p in op.params("path"):
+        assert p["name"] in path_params, f"{where}: path parameter {p['name']} missing"
+        validate(path_params[p["name"]], p["schema"], f"{where} path parameter {p['name']}")
+
+    # Query parameters
+    query: dict[str, list[str]] = {}
+    for name, value in request.url.params.multi_items():
+        query.setdefault(name, []).append(value)
+    declared = {p["name"]: p for p in op.params("query")}
+    unknown = set(query) - set(declared)
+    assert not unknown, f"{where}: undeclared query parameters {sorted(unknown)}"
+    for name, p in declared.items():
+        if name not in query:
+            assert not p.get("required"), f"{where}: required query parameter {name} missing"
+            continue
+        validate(_coerce(query[name], p), p["schema"], f"{where} query {name}")
+
+    # Header parameters
+    for p in op.params("header"):
+        value = request.headers.get(p["name"])
+        if value is None:
+            assert not p.get("required"), f"{where}: required header {p['name']} missing"
+            continue
+        validate(value, p["schema"], f"{where} header {p['name']}")
+
+    # Body
+    body: Any = None
+    content = request.content
+    request_body = op.spec.get("requestBody")
+    if request_body is None:
+        assert not content, f"{where}: takes no request body"
+    elif content:
+        media = request.headers.get("content-type", "")
+        if "multipart/form-data" in request_body["content"]:
+            assert media.startswith("multipart/form-data; boundary="), (
+                f"{where}: body must be multipart/form-data with a boundary"
+            )
+            body = parse_multipart(media, content)
+            schema = request_body["content"]["multipart/form-data"]["schema"]
+        else:
+            assert media.startswith("application/json"), f"{where}: body must be JSON"
+            body = json.loads(content)
+            schema = request_body["content"]["application/json"]["schema"]
+        validate(body, schema, f"{where} request body")
+    else:
+        assert request_body.get("required") is not True, f"{where}: request body missing"
+
+    return Recorded(op, request, path_params, query, body)
+
+
 @dataclass
 class ContractMock:
     calls: list[Recorded] = field(default_factory=list)
@@ -317,68 +396,9 @@ class ContractMock:
         return httpx.MockTransport(self.handle)
 
     def handle(self, request: httpx.Request) -> httpx.Response:
-        assert str(request.url).startswith(BASE_URL), f"unexpected host in {request.url}"
-        raw_path = request.url.raw_path.split(b"?", 1)[0].decode("ascii")
-        op, encoded = find_operation(request.method, raw_path)
-        path_params = {k: unquote(v) for k, v in encoded.items()}
-        where = f"{op.method} {op.path}"
-
-        # Authentication
-        auth = request.headers.get("authorization")
-        if op.needs_auth:
-            assert auth == f"Bearer {API_KEY}", f"{where}: missing or wrong Authorization header"
-        else:
-            assert auth is None, f"{where}: must be sent without an API key"
-
-        # Path parameters
-        for p in op.params("path"):
-            assert p["name"] in path_params, f"{where}: path parameter {p['name']} missing"
-            validate(path_params[p["name"]], p["schema"], f"{where} path parameter {p['name']}")
-
-        # Query parameters
-        query: dict[str, list[str]] = {}
-        for name, value in request.url.params.multi_items():
-            query.setdefault(name, []).append(value)
-        declared = {p["name"]: p for p in op.params("query")}
-        unknown = set(query) - set(declared)
-        assert not unknown, f"{where}: undeclared query parameters {sorted(unknown)}"
-        for name, p in declared.items():
-            if name not in query:
-                assert not p.get("required"), f"{where}: required query parameter {name} missing"
-                continue
-            validate(_coerce(query[name], p), p["schema"], f"{where} query {name}")
-
-        # Header parameters
-        for p in op.params("header"):
-            value = request.headers.get(p["name"])
-            if value is None:
-                assert not p.get("required"), f"{where}: required header {p['name']} missing"
-                continue
-            validate(value, p["schema"], f"{where} header {p['name']}")
-
-        # Body
-        body: Any = None
-        content = request.content
-        request_body = op.spec.get("requestBody")
-        if request_body is None:
-            assert not content, f"{where}: takes no request body"
-        elif content:
-            media = request.headers.get("content-type", "")
-            if "multipart/form-data" in request_body["content"]:
-                assert media.startswith("multipart/form-data; boundary="), (
-                    f"{where}: body must be multipart/form-data with a boundary"
-                )
-                body = parse_multipart(media, content)
-                schema = request_body["content"]["multipart/form-data"]["schema"]
-            else:
-                assert media.startswith("application/json"), f"{where}: body must be JSON"
-                body = json.loads(content)
-                schema = request_body["content"]["application/json"]["schema"]
-            validate(body, schema, f"{where} request body")
-        else:
-            assert request_body.get("required") is not True, f"{where}: request body missing"
-
-        self.calls.append(Recorded(op, request, path_params, query, body))
+        recorded = check_request(request, base_url=BASE_URL, api_key=API_KEY)
+        op = recorded.operation
+        self.calls.append(recorded)
 
         queued = self.queued.get(op.key)
         if queued:

@@ -47,12 +47,19 @@ QueryValue = str | int | float | bool | None
 
 
 def encode_path(value: str) -> str:
-    """Encode one path segment (an id, or an inbox address such as support@example.com)."""
+    """Encode one path segment (an id, or an inbox address such as support@example.com).
+
+    An empty value is refused: ``/emails/`` is the list, so a missing id would
+    quietly run another operation and hand back its answer.
+    """
+    if str(value) == "":
+        raise ValueError("A path parameter cannot be empty")
     return quote(str(value), safe="@")
 
 
 def encode_query(query: Mapping[str, Any] | None) -> list[tuple[str, QueryValue]]:
-    """Drop unset values, write booleans as true/false and lists comma-separated in one key."""
+    """Drop unset values and empty lists, write booleans as true/false and lists
+    comma-separated in one key."""
 
     def text(item: Any) -> str:
         if isinstance(item, bool):
@@ -64,7 +71,8 @@ def encode_query(query: Mapping[str, Any] | None) -> list[tuple[str, QueryValue]
         if value is None:
             continue
         if isinstance(value, (list, tuple)):
-            pairs.append((key, ",".join(text(item) for item in value)))
+            if value:  # an empty list is "no filter": ``key=`` would be refused as a value
+                pairs.append((key, ",".join(text(item) for item in value)))
         else:
             pairs.append((key, text(value)))
     return pairs

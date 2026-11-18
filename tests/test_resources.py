@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Callable
 from email.parser import BytesParser
 from email.policy import HTTP
+from pathlib import Path
 
 import httpx
 
@@ -14,6 +16,7 @@ from billionsend.types import SendEmailRequest
 
 from .contract import ContractMock
 
+README = (Path(__file__).resolve().parent.parent / "README.md").read_text(encoding="utf-8")
 ID = "6a1f1d38-3c55-4a4e-9a57-0f2b3c4d5e6f"
 ID2 = "7b2e2e49-4d66-4b5f-8b68-1a3c4d5e6f70"
 
@@ -94,8 +97,8 @@ def test_path_parameters_are_encoded(client: BillionSend, mock: ContractMock) ->
     call = mock.last
     assert call.path_params == {"inbox_id": "support@example.com", "thread_id": ID, "email_id": ID2}
     assert call.request.url.raw_path.startswith(b"/inboxes/support@example.com/threads/")
-    client.domains.get("a/b c")
-    assert mock.last.request.url.raw_path == b"/domains/a%2Fb%20c"
+    client.contacts.get("a/b c+d@e.com")
+    assert mock.last.request.url.raw_path == b"/contacts/a%2Fb%20c%2Bd@e.com"
 
 
 def test_header_parameter(client: BillionSend, mock: ContractMock) -> None:
@@ -234,17 +237,21 @@ def test_removed_operations_are_gone(client: BillionSend) -> None:
     assert not hasattr(client.unsubscribes, "delete")
 
 
-def test_usage_has_the_published_shape(client: BillionSend, mock: ContractMock) -> None:
-    from .contract import example
+def test_the_usage_fields_the_readme_names_exist_in_the_contract() -> None:
+    """The README says what ``usage.get()`` holds; the contract (not the SDK) must agree."""
+    from .contract import SPEC
 
-    usage = example(
-        {"$ref": "#/components/schemas/UsageResponse"},
-    )
-    mock.respond("GET", "/usage", json_body=usage)
-    result = client.usage.get()
-    assert result["emails"]["daily"]["used"] == usage["emails"]["daily"]["used"]
-    assert "limit" in result["emails"]["monthly"]
-    assert "limits" not in result
+    schema = SPEC["components"]["schemas"]["UsageResponse"]["properties"]
+    sentence = next(line for line in README.splitlines() if "account usage (" in line)
+    named = re.findall(r"`([a-z_]+(?:\.[a-z_]+)?)`", sentence.split("account usage (")[1])
+    assert {"emails.daily", "emails.monthly", "contacts", "domains"} <= set(named)
+    for path in named:
+        head, _, tail = path.partition(".")
+        assert head in schema, f"usage has no {head}"
+        if tail:
+            assert tail in schema[head]["properties"], f"usage.{head} has no {tail}"
+    # The old shape is gone.
+    assert not {"limits", "today", "period"} & set(schema)
 
 
 CSV = b"Email,First Name\nada@example.com,Ada\n"

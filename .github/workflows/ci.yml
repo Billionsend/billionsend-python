@@ -52,7 +52,12 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: uv sync --locked
-      - run: uv run pytest
+      - name: Tests with line and branch coverage
+        run: uv run coverage run -m pytest
+      - name: Coverage gate (hand-written code at least 95 %, every generated method called)
+        run: |
+          uv run coverage json
+          uv run python scripts/check_coverage.py
 
   build:
     name: Build
