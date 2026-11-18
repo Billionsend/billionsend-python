@@ -30,6 +30,7 @@ from billionsend import (
 )
 
 from .api import Api, snake
+from .conftest import Sleeps
 from .contract import HTTP_METHODS, SPEC, ContractMock, example, resolve
 
 AWKWARD = "a b/c+d@e.com é#?%25&=;,:"
@@ -465,3 +466,35 @@ def test_the_mock_refuses_a_queued_answer_that_breaks_the_contract(mock: Contrac
     with pytest.raises(AssertionError, match="does not match the contract"):
         mock.respond("GET", "/usage", 403, json_body={"name": "x"})  # not the error shape
     mock.respond("GET", "/usage", 200, json_body=valid)
+
+
+# ------------------------------------------------------------------ 429 on every operation
+
+RATE_LIMITED = [s for s in SPECS if not s.stream and 429 in s.error_codes()]
+
+
+def test_most_operations_document_a_429() -> None:
+    assert len(RATE_LIMITED) > 100
+
+
+@pytest.mark.parametrize("spec", RATE_LIMITED, ids=lambda s: s.id)
+def test_a_429_is_waited_out_and_retried_on_every_operation(
+    api: Api, mock: ContractMock, sleeps: Sleeps, spec: Spec
+) -> None:
+    """The API answers 429 before it writes anything, so whatever the method (a POST,
+    PATCH or DELETE with no idempotency key included) the call waits as ``Retry-After``
+    says and tries again."""
+    mock.error(
+        spec.method,
+        spec.path,
+        429,
+        "rate_limit_exceeded",
+        "slow",
+        headers={"retry-after": "2"},
+    )
+    invoke(api, spec)
+    assert len(mock.calls) == 2
+    assert [c.request.method for c in mock.calls] == [spec.method, spec.method]
+    if not spec.is_form:  # a multipart body is written again with a new boundary
+        assert mock.calls[0].request.content == mock.calls[1].request.content
+    assert sleeps == [2.0]

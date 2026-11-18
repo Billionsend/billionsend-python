@@ -60,7 +60,10 @@ def sanitize(node: Any) -> tuple[Any, int]:
 def load(source: str | None) -> Any:
     if source:
         return json.loads(Path(source).read_text(encoding="utf-8"))
-    request = urllib.request.Request(DEFAULT_URL, headers={"Accept": "application/json"})
+    request = urllib.request.Request(
+        DEFAULT_URL,
+        headers={"Accept": "application/json", "User-Agent": "billionsend-python-sync/1.0"},
+    )
     with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310 - fixed https URL
         return json.loads(response.read().decode("utf-8"))
 

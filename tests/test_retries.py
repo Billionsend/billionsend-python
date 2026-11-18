@@ -19,13 +19,14 @@ from billionsend import (
     APITimeoutError,
     AsyncBillionSend,
     BillionSend,
+    BillionSendError,
     ConflictError,
     RateLimitError,
 )
 from billionsend.types import SendEmailRequest
 
 from .conftest import Sleeps
-from .contract import ContractMock
+from .contract import API_KEY, BASE_URL, ContractMock
 
 ID = "6a1f1d38-3c55-4a4e-9a57-0f2b3c4d5e6f"
 SEND: SendEmailRequest = {"from": "a@acme.dev", "to": "b@example.com", "subject": "s", "text": "t"}
@@ -329,3 +330,129 @@ async def test_async_unkeyed_post_network_failure(
     with pytest.raises(APIConnectionError):
         await async_client.domains.create({"name": "example.com"})
     assert len(mock.calls) == 1
+
+
+@pytest.mark.parametrize(
+    ("method", "path", "call"),
+    [
+        ("POST", "/domains", lambda c: c.domains.create({"name": "example.com"})),
+        ("PATCH", "/domains/{id}", lambda c: c.domains.update(ID, {"click_tracking": True})),
+        ("DELETE", "/domains/{id}", lambda c: c.domains.delete(ID)),
+        ("POST", "/emails", lambda c: c.emails.send(SEND)),
+    ],
+)
+def test_429_is_retried_whatever_the_method_and_key(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps, method: str, path: str, call: Any
+) -> None:
+    mock.error(method, path, 429, "rate_limit_exceeded", "slow", headers={"retry-after": "1"})
+    call(client)
+    assert len(mock.calls) == 2
+    assert sleeps == [1.0]
+
+
+def test_429_without_retry_after_backs_off_for_an_unkeyed_post(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.error("POST", "/domains", 429, "rate_limit_exceeded", "slow")
+    client.domains.create({"name": "example.com"})
+    assert len(mock.calls) == 2
+    assert len(sleeps) == 1
+    assert 0 < sleeps[0] <= 0.5
+
+
+def test_429_with_an_http_date_is_retried_for_an_unkeyed_patch(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.error(
+        "PATCH",
+        "/domains/{id}",
+        429,
+        "rate_limit_exceeded",
+        "slow",
+        headers={"retry-after": "Wed, 21 Oct 2015 07:28:00 GMT"},
+    )
+    client.domains.update(ID, {"click_tracking": True})
+    assert len(mock.calls) == 2
+    assert sleeps == [0.0]
+
+
+def test_429_asking_over_a_minute_is_raised_for_an_unkeyed_post(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.error(
+        "POST", "/domains", 429, "daily_quota_exceeded", "quota", headers={"retry-after": "61"}
+    )
+    with pytest.raises(RateLimitError):
+        client.domains.create({"name": "example.com"})
+    assert len(mock.calls) == 1
+    assert sleeps == []
+
+
+def test_429_of_an_unkeyed_post_is_bounded(
+    client: BillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    for _ in range(3):
+        mock.error("POST", "/domains", 429, "rate_limit_exceeded", "slow")
+    with pytest.raises(RateLimitError):
+        client.domains.create({"name": "example.com"})
+    assert len(mock.calls) == 3
+
+
+async def test_async_429_is_retried_for_an_unkeyed_delete(
+    async_client: AsyncBillionSend, mock: ContractMock, sleeps: Sleeps
+) -> None:
+    mock.error("POST", "/domains", 429, "rate_limit_exceeded", "slow", headers={"retry-after": "4"})
+    await async_client.domains.create({"name": "example.com"})
+    assert len(mock.calls) == 2
+    assert sleeps == [4.0]
+
+
+# ---------------------------------------------------------------- invalid header values
+
+BAD_HEADERS = [
+    pytest.param("Idempotency-Key", "welcome/订单-1", id="non-ascii"),
+    pytest.param("Idempotency-Key", "abc\ndef", id="newline"),
+    pytest.param("Idempotency-Key", "abc\r\nX-Evil: 1", id="crlf"),
+    pytest.param("Idempotency-Key", "abc\x00def", id="nul"),
+    pytest.param("X-Trace", "caf\u00e9", id="latin1"),
+]
+
+
+@pytest.mark.parametrize(("name", "value"), BAD_HEADERS)
+def test_an_invalid_header_value_is_refused_before_any_request(
+    api: Any, mock: ContractMock, sleeps: Sleeps, name: str, value: str
+) -> None:
+    with pytest.raises(BillionSendError) as info:
+        api.call("emails.send", SEND, extra_headers={name: value})
+    assert name in str(info.value)
+    assert value not in str(info.value)
+    assert not isinstance(info.value, APIConnectionError)
+    assert mock.calls == []
+    assert sleeps == []
+
+
+def test_an_invalid_idempotency_key_argument_is_refused(api: Any, mock: ContractMock) -> None:
+    with pytest.raises(BillionSendError, match="Idempotency-Key") as info:
+        api.call("emails.send", SEND, idempotency_key="welcome/订单-1")
+    assert "订单" not in str(info.value)
+    assert mock.calls == []
+
+
+def test_an_invalid_default_header_is_refused(mock: ContractMock) -> None:
+    http = httpx.Client(transport=mock.transport())
+    bad = BillionSend(API_KEY, base_url=BASE_URL, http_client=http, default_headers={"X-Team": "é"})
+    with pytest.raises(BillionSendError, match="X-Team"):
+        bad.usage.get()
+    assert mock.calls == []
+    http.close()
+
+
+def test_an_invalid_header_on_an_event_stream_is_refused(api: Any, mock: ContractMock) -> None:
+    with pytest.raises(BillionSendError, match="X-Trace"):
+        api.call("inboxes.events.stream", extra_headers={"X-Trace": "é"})
+    assert mock.calls == []
+
+
+def test_a_plain_header_value_still_goes_out(api: Any, mock: ContractMock) -> None:
+    api.call("emails.send", SEND, idempotency_key="welcome/order-1 ~!")
+    assert mock.last.request.headers["idempotency-key"] == "welcome/order-1 ~!"

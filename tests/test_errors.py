@@ -61,6 +61,7 @@ def test_status_maps_to_exception(
 
 
 def test_rate_limit_carries_retry_after(client: BillionSend, mock: ContractMock) -> None:
+    client.max_retries = 0
     mock.error(
         "POST", "/domains", 429, "rate_limit_exceeded", "slow down", headers={"retry-after": "7"}
     )

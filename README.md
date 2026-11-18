@@ -250,11 +250,11 @@ except BillionSendError as err:
 | 5xx | `APIError` |
 | no answer, or one that cannot be read (a broken gzip body) | `APIConnectionError`, and `APITimeoutError` (a subclass) for timeouts; `status_code` and `request_id` are `None` |
 
-An answer that is not JSON keeps the same shape, with `name` set to `"application_error"`. A success with no body at all (a 204) returns `None`. `WebhookVerificationError` (`name` `"webhook_verification_error"`) is a `BillionSendError` too.
+A header value the transport cannot send (a non-ASCII character or a control character, such as `Idempotency-Key: welcome/订单-1` or a line break inside a key) raises `BillionSendError` (`name` `"invalid_header"`, naming the header, never its value) before anything is sent, and is never retried. An answer that is not JSON keeps the same shape, with `name` set to `"application_error"`. A success with no body at all (a 204) returns `None`. `WebhookVerificationError` (`name` `"webhook_verification_error"`) is a `BillionSendError` too.
 
 ## Retries
 
-A request is retried when repeating it is safe: GET, PUT and DELETE, and any request carrying an idempotency key (every send does, and `events.send`). It is retried on 429, on 5xx, when no answer came back (connection failure, timeout), and, for a keyed request, on 409 `concurrent_idempotent_requests` (a retry that caught the first attempt still running). The wait is the answer's `Retry-After` when there is one, otherwise exponential backoff with jitter (0.5 s, 1 s, 2 s… up to 8 s). An answer asking to wait more than 60 seconds, such as a used-up daily quota, is raised at once. `max_retries` (default 2) bounds the retries of one call; `0` turns them off.
+A 429 is retried for every method: the API answers it before it writes anything, so repeating is always safe, with or without an idempotency key. The other failures are retried only when repeating the request is safe: GET, PUT and DELETE, and any request carrying an idempotency key (every send does, and `events.send`). That covers 5xx, no answer at all (connection failure, timeout) and, for a keyed request, 409 `concurrent_idempotent_requests` (a retry that caught the first attempt still running). The wait is the answer's `Retry-After` (seconds or an HTTP date) when there is one, otherwise exponential backoff with jitter (0.5 s, 1 s, 2 s… up to 8 s). An answer asking to wait more than 60 seconds, such as a used-up daily quota, is raised at once. `max_retries` (default 2) bounds the retries of one call; `0` turns them off.
 
 ## Configuration
 

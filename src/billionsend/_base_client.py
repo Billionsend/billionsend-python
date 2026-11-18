@@ -209,6 +209,21 @@ def _merge(headers: dict[str, str], more: Mapping[str, str]) -> None:
         headers[name] = value
 
 
+def _check_headers(headers: Mapping[str, str]) -> None:
+    """Refuse, before anything is sent, a header the transport would refuse: a name or
+    value with a non-ASCII or control character (a line break could end the header
+    line). Only the header's name is in the message, never its value (it may be a key)."""
+    for name, value in headers.items():
+        for part in (name, value):
+            if not isinstance(part, str) or any(
+                ord(c) > 126 or (ord(c) < 32 and c != "\t") or ord(c) == 127 for c in part
+            ):
+                raise BillionSendError(
+                    f"The {name!r} header must be ASCII text without control characters",
+                    name="invalid_header",
+                )
+
+
 def _clean_key(key: str | None) -> str | None:
     """The key as it goes into the header: a key read from a file or ``.env`` ends in a
     newline, so surrounding whitespace is dropped and a key of only whitespace is no key.
@@ -275,6 +290,7 @@ class BaseClient:
         _merge(out, self._default_headers)
         _merge(out, {k: v for k, v in (headers or {}).items() if v is not None})
         _merge(out, extra_headers or {})
+        _check_headers(out)
         return out
 
     def _request_headers(
@@ -310,22 +326,23 @@ class BaseClient:
     ) -> float | None:
         """Seconds to wait before retrying after ``error``, or None to raise it.
 
-        Retried: requests that are safe to repeat (GET, PUT, DELETE…, or any
-        request with an idempotency key) failing with 429, 5xx or no answer at
-        all, and a keyed request whose first attempt is still running (409
-        concurrent_idempotent_requests).
+        Retried: a 429 for any method (the API answers it before it writes anything,
+        so repeating is always safe); and, for requests that are safe to repeat (GET,
+        PUT, DELETE…, or any request with an idempotency key), a 5xx or no answer at
+        all, and for a keyed request whose first attempt is still running a 409
+        concurrent_idempotent_requests.
         """
         if attempt >= self.max_retries:
             return None
-        if method not in IDEMPOTENT_METHODS and not keyed:
-            return None
         status = error.status_code
-        if isinstance(error, APIConnectionError):
+        if status != 429 and method not in IDEMPOTENT_METHODS and not keyed:
+            return None
+        if status == 429 or isinstance(error, APIConnectionError):
             pass
         elif status == 409:
             if not (keyed and error.name == CONCURRENT_IDEMPOTENT):
                 return None
-        elif status is None or (status != 429 and status < 500):
+        elif status is None or status < 500:
             return None
         if error.response is not None:
             hinted = parse_retry_after(error.response)
