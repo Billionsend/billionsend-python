@@ -5377,6 +5377,7 @@ class AsyncSuppressionsResource:
         after: str | None = None,
         before: str | None = None,
         origin: Literal["bounce", "complaint", "manual"] | None = None,
+        kind: Literal["email", "domain", "all"] | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> ListSuppressionsResponse:
@@ -5391,7 +5392,13 @@ class AsyncSuppressionsResource:
         response = await self._client.request(
             "GET",
             "/suppressions",
-            query={"limit": limit, "after": after, "before": before, "origin": origin},
+            query={
+                "limit": limit,
+                "after": after,
+                "before": before,
+                "origin": origin,
+                "kind": kind,
+            },
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -5404,6 +5411,7 @@ class AsyncSuppressionsResource:
         after: str | None = None,
         before: str | None = None,
         origin: Literal["bounce", "complaint", "manual"] | None = None,
+        kind: Literal["email", "domain", "all"] | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> AsyncIterator[ListSuppressionsResponseDataItem]:
@@ -5417,6 +5425,7 @@ class AsyncSuppressionsResource:
             return await self.list(
                 limit=limit,
                 origin=origin,
+                kind=kind,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,

@@ -153,6 +153,8 @@ def billionsend_webhook():
 
 `verify_webhook` checks the `webhook-id`, `webhook-timestamp` and `webhook-signature` headers (Standard Webhooks: HMAC-SHA256 over `id.timestamp.body`), accepts any of several signatures (both secrets sign during a rotation's overlap) and refuses a timestamp more than `tolerance` seconds (default 300) from now, which bounds replays. It returns the parsed event (`type`, `created_at`, `data`). Parse the body only after verifying: re-serialised JSON does not verify. A secret that is not a `whsec_` secret raises `ValueError`.
 
+Deliveries come from the fixed IP `51.161.117.92` with the header `User-Agent: BillionSend-Webhooks/1.0 (+https://billionsend.com/docs/concepts/webhooks)`; if your endpoint sits behind a WAF or Cloudflare, allow them as [the webhooks guide](https://billionsend.com/docs/concepts/webhooks) describes. `deliverability.warning` and `deliverability.paused` events carry `scope` (`"team"` or `"domain"`) and `domain` (`{"id", "name"}`, `None` for the team).
+
 ## Resources
 
 | Attribute | Covers |
@@ -168,9 +170,10 @@ def billionsend_webhook():
 | `broadcasts` | create, list, get, update, delete, send, duplicate, cancel, recipients, clicked_links |
 | `templates` | create, list, get, update, delete, publish, duplicate |
 | `webhooks` (`.events`) | create, list, get, update, delete, rotate_signing_secret; `events.list`, `events.get`, `events.replay`, `events.attempts.list` |
-| `suppressions` (`.batch`), `unsubscribes` | suppression list (`batch.add`, `batch.remove`) and opt-outs (`unsubscribes.list`, `unsubscribes.create`) |
+| `suppressions` (`.batch`), `unsubscribes` | suppression list (`batch.add` takes `emails` and `domains`, `batch.remove`; `list(kind="email" \| "domain" \| "all")`; an entry's `email` is `None` on a domain entry, and `removable` is `False` for a bounce or a complaint) and opt-outs (`unsubscribes.list`, `unsubscribes.create`) |
 | `verifications` | availability, estimate, create, list, get |
 | `usage`, `deliverability` | account usage (`emails.daily`, `emails.monthly`, `contacts`, `domains`, …) and sending health |
+| `deliverability.get()` | the team's standing, and each sending domain's own under `domains`; a paused domain answers 403 `domain_sending_paused`, a paused team 403 `sending_paused` |
 | `events` | custom events: create, list, get, update, remove, send |
 | `automations` (`.runs`) | create, list, get, update, remove, validate, duplicate, simulate, stop, metrics; `runs.list`, `runs.get`, `runs.cancel` |
 | `logs`, `oauth_grants` | request logs (`list`, `get`) and OAuth grants (`list`, `revoke`) |

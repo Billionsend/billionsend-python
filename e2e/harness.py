@@ -67,18 +67,25 @@ def recipients(body: Any) -> list[str]:
     return found
 
 
-# The calls that put addresses on the suppression list, and the body field holding them.
-SUPPRESSING_CALLS = {"/suppressions": "email", "/suppressions/batch/add": "emails"}
+# The calls that put addresses or whole domains on the suppression list, and the body fields
+# holding them (an address field, a domain field).
+SUPPRESSING_CALLS = {
+    "/suppressions": ("email", "domain"),
+    "/suppressions/batch/add": ("emails", "domains"),
+}
 
 
 def suppressed_by(request: httpx.Request, body: Any) -> list[str]:
-    """The addresses a request puts on the suppression list."""
-    field_name = SUPPRESSING_CALLS.get(request.url.path)
-    if request.method != "POST" or field_name is None or not isinstance(body, dict):
+    """The addresses a request puts on the suppression list; a whole domain is ``@domain``."""
+    fields = SUPPRESSING_CALLS.get(request.url.path)
+    if request.method != "POST" or fields is None or not isinstance(body, dict):
         return []
-    value = body.get(field_name)
-    items = value if isinstance(value, list) else [value]
-    return [address_of(i) for i in items if isinstance(i, str)]
+    found: list[str] = []
+    for name, prefix in zip(fields, ("", "@"), strict=True):
+        value = body.get(name)
+        items = value if isinstance(value, list) else [value]
+        found += [prefix + address_of(i).removeprefix("@") for i in items if isinstance(i, str)]
+    return found
 
 
 class BudgetExceeded(Exception):
@@ -103,8 +110,8 @@ class Ledger:
     checked_answers: int = 0
     violations: list[str] = field(default_factory=list)
     calls: list[tuple[str, int]] = field(default_factory=list)
-    # Every address this run put on the suppression list, kept even after it is taken off
-    # again: a suppressed address is never mailed.
+    # Every address (or ``@domain``) this run put on the suppression list, kept even after it
+    # is taken off again: a suppressed address is never mailed.
     suppressed: set[str] = field(default_factory=set)
     _last: float = 0.0
     _lock: threading.Lock = field(default_factory=threading.Lock)
@@ -123,7 +130,7 @@ class Ledger:
                 raise UnsafeMail(
                     f"{request.method} {request.url.path}: {bare} is not the simulator"
                 )
-            if bare in self.suppressed:
+            if bare in self.suppressed or "@" + bare.rpartition("@")[2] in self.suppressed:
                 raise UnsafeMail(f"{request.method} {request.url.path}: {bare} is suppressed")
         self.suppressed.update(suppressed_by(request, body))
 

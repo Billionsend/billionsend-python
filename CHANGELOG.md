@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.2 (2026-11-19)
+
+The OpenAPI snapshot follows the published document (the API's 2026-11-19 release, 180 operations).
+
+- Suppressions can block a whole domain. `suppressions.create({"domain": ...})` and `suppressions.batch.add({"domains": [...]})` (a request needs `emails`, `domains` or both; `email` of `create` is optional too); `suppressions.list(kind="email" | "domain" | "all")` and `list_all(kind=...)` filter by kind (default: single addresses). Entries gain `kind`, `domain` and `removable` (`False` for a bounce or a complaint), and `email` is `None` on a domain entry: code that reads `entry["email"]` must expect `None`. Consumer mailbox providers such as `gmail.com` are refused as domain entries.
+- `deliverability.get()` returns `domains`: each sending domain's own standing (`domain_id`, `domain`, `status`, `tier`, `paused_by`, the rates and counts, `pause_margin`, typed as `DomainDeliverability`).
+- New API error: 403 `domain_sending_paused` (one sending domain is paused; a paused team is still `sending_paused`). Both raise `PermissionDeniedError`.
+- `domains.create` defaults `custom_return_path` to `bounce` (it was `send`), and `domains.update` with `custom_return_path` is refused with 422: it is fixed when the domain is added.
+- Webhooks: `deliverability.warning` and `deliverability.paused` payloads carry `scope` (`"team"` or `"domain"`) and `domain`; deliveries come from a fixed IP with a fixed `User-Agent` (see the README's webhook section).
+- Tests: every case above through the sync and the async client against the snapshot; the live suite's mail guard also refuses a recipient on a domain the run suppressed.
+
 ## 0.2.1 (2026-11-19)
 
 The OpenAPI snapshot follows the published document again (the API's 2026-11-19 release). No method or type signature changes.

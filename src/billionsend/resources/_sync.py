@@ -5365,6 +5365,7 @@ class SuppressionsResource:
         after: str | None = None,
         before: str | None = None,
         origin: Literal["bounce", "complaint", "manual"] | None = None,
+        kind: Literal["email", "domain", "all"] | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> ListSuppressionsResponse:
@@ -5379,7 +5380,13 @@ class SuppressionsResource:
         response = self._client.request(
             "GET",
             "/suppressions",
-            query={"limit": limit, "after": after, "before": before, "origin": origin},
+            query={
+                "limit": limit,
+                "after": after,
+                "before": before,
+                "origin": origin,
+                "kind": kind,
+            },
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -5392,6 +5399,7 @@ class SuppressionsResource:
         after: str | None = None,
         before: str | None = None,
         origin: Literal["bounce", "complaint", "manual"] | None = None,
+        kind: Literal["email", "domain", "all"] | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> Iterator[ListSuppressionsResponseDataItem]:
@@ -5405,6 +5413,7 @@ class SuppressionsResource:
             return self.list(
                 limit=limit,
                 origin=origin,
+                kind=kind,
                 after=after_,
                 before=before_,
                 extra_headers=extra_headers,

@@ -103,6 +103,7 @@ __all__ = [
     "DeliverabilityResponse",
     "DomainClaim",
     "DomainClaimRecord",
+    "DomainDeliverability",
     "DuplicateBroadcastResponse",
     "EmailInsightsResponse",
     "EmailInsightsResponseChecksItem",
@@ -1322,6 +1323,7 @@ class UpdateDomainRequest(TypedDict):
     send_transactional_to_unsubscribed: NotRequired[bool]
     unsubscribe_page: NotRequired[UpdateDomainRequestUnsubscribePage]
     tls: NotRequired[Any]
+    custom_return_path: NotRequired[Any]
     capabilities: NotRequired[UpdateDomainRequestCapabilities]
     receiving_catch_all: NotRequired[bool]
 
@@ -1623,7 +1625,8 @@ class ListWebhookEventAttemptsResponse(TypedDict):
 
 
 class BatchAddSuppressionsRequest(TypedDict):
-    emails: list[str]
+    emails: NotRequired[list[str]]
+    domains: NotRequired[list[str]]
     origin: NotRequired[Literal["bounce", "complaint", "manual"]]
 
 
@@ -1660,13 +1663,17 @@ class BatchRemoveSuppressionsResponse(TypedDict):
 
 
 class CreateSuppressionRequest(TypedDict):
-    email: str
+    email: NotRequired[str]
+    domain: NotRequired[str]
     origin: NotRequired[Literal["bounce", "complaint", "manual"]]
 
 
 class ListSuppressionsResponseDataItem(TypedDict):
     id: str
-    email: str
+    email: str | None
+    kind: Literal["email", "domain"]
+    domain: str | None
+    removable: bool
     origin: Literal["bounce", "complaint", "manual"]
     source_id: str | None
     created_at: str
@@ -1680,7 +1687,10 @@ class ListSuppressionsResponse(TypedDict):
 
 class GetSuppressionResponse(TypedDict):
     id: str
-    email: str
+    email: str | None
+    kind: Literal["email", "domain"]
+    domain: str | None
+    removable: bool
     origin: Literal["bounce", "complaint", "manual"]
     source_id: str | None
     created_at: str
@@ -3697,6 +3707,24 @@ class EmailInsightsResponse(TypedDict):
     checks: list[EmailInsightsResponseChecksItem]
 
 
+class DomainDeliverability(TypedDict):
+    domain_id: str | None
+    domain: str | None
+    status: Literal["ok", "warning", "paused"]
+    emails_sent: int
+    hard_bounce_rate: float
+    complaint_rate: float
+    hard_bounces: int
+    complaints: int
+    delivered: int
+    window_days: int
+    tier: Literal["ok", "warning", "paused", "insufficient"]
+    paused_by: Literal["domain", "team", "both"] | None
+    recent_hard_bounce_rate: float
+    recent_complaint_rate: float
+    pause_margin: float
+
+
 class DeliverabilityResponse(TypedDict):
     object: Literal["deliverability"]
     score: float | None
@@ -3711,3 +3739,4 @@ class DeliverabilityResponse(TypedDict):
     insufficient_outcome_data: bool
     guardrail_status: Literal["ok", "warning", "paused"]
     score_version: int
+    domains: list[DomainDeliverability]

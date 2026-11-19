@@ -348,6 +348,21 @@ def test_an_address_this_run_suppressed_is_never_mailed_again() -> None:
     assert len(mock.calls) == sent + 1
 
 
+def test_a_domain_this_run_suppressed_is_never_mailed_again() -> None:
+    led = ledger()
+    c, mock = mailing_client(led)
+    c.suppressions.create({"domain": SIM, "origin": "manual"})
+    sent = len(mock.calls)
+    with pytest.raises(UnsafeMail, match="suppressed"):
+        c.emails.send(mail(to=[f"success@{SIM}"]))
+    assert len(mock.calls) == sent
+    other, other_mock = mailing_client(ledger())
+    other.suppressions.batch.add({"domains": [SIM.upper()], "origin": "manual"})
+    with pytest.raises(UnsafeMail, match="suppressed"):
+        other.emails.send(mail(to=[f"success+sdk-e2e-1-x@{SIM}"]))
+    assert [c.operation.path for c in other_mock.calls] == ["/suppressions/batch/add"]
+
+
 def test_removing_a_suppression_does_not_make_the_address_mailable() -> None:
     led = ledger()
     c, _mock = mailing_client(led)
