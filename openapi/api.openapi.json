@@ -13579,7 +13579,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key: a sending_access key, or a key held to one domain that named another domain in domain_id",
+            "description": "Restricted API key: a sending_access key, or a key held to one domain that named another domain in domain_id; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13747,7 +13747,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key: a sending_access key, or a key held to one domain that named another domain in domain_id",
+            "description": "Restricted API key: a sending_access key, or a key held to one domain that named another domain in domain_id; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -13903,7 +13903,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key: a sending_access key, or a key held to one domain that named another domain in domain_id",
+            "description": "Restricted API key: a sending_access key, or a key held to one domain that named another domain in domain_id; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -14059,7 +14059,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key: a sending_access key, or a key held to one domain that named another domain in domain_id",
+            "description": "Restricted API key: a sending_access key, or a key held to one domain that named another domain in domain_id; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -14177,7 +14177,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -14329,7 +14329,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -14432,7 +14432,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -14534,7 +14534,7 @@
             }
           },
           "403": {
-            "description": "Plan limit reached",
+            "description": "Plan limit reached; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -14700,6 +14700,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -14788,6 +14803,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -14863,6 +14893,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -14997,7 +15042,7 @@
             }
           },
           "403": {
-            "description": "Plan limit reached (strict mode)",
+            "description": "Plan limit reached (strict mode); refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15129,6 +15174,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -15212,6 +15272,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15341,6 +15416,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -15417,6 +15507,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15533,6 +15638,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -15616,6 +15736,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -15767,6 +15902,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -15879,6 +16029,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -15961,6 +16126,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16073,7 +16253,7 @@
             }
           },
           "403": {
-            "description": "Plan limit reached",
+            "description": "Plan limit reached; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16214,6 +16394,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -16306,6 +16501,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16443,6 +16653,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -16517,6 +16742,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16657,6 +16897,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -16732,6 +16987,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16828,6 +17098,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -16942,6 +17227,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -17030,7 +17330,7 @@
             }
           },
           "403": {
-            "description": "A key held to one domain bound this to another domain, or unbound it",
+            "description": "A key held to one domain bound this to another domain, or unbound it; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17156,6 +17456,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -17231,6 +17546,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17341,7 +17671,7 @@
             }
           },
           "403": {
-            "description": "A key held to one domain bound this to another domain, or unbound it",
+            "description": "A key held to one domain bound this to another domain, or unbound it; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17443,6 +17773,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17604,6 +17949,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -17722,7 +18082,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, sending paused, or a From on the shared inbox domain",
+            "description": "Restricted API key, sending paused, or a From on the shared inbox domain; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -17863,6 +18223,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -17938,6 +18313,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18062,6 +18452,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -18165,6 +18570,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18347,6 +18767,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -18472,6 +18907,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18629,7 +19079,7 @@
             }
           },
           "403": {
-            "description": "Sending paused, or a From on the shared inbox domain",
+            "description": "Sending paused, or a From on the shared inbox domain; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18748,7 +19198,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -18865,6 +19315,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -18953,7 +19418,7 @@
             }
           },
           "403": {
-            "description": "A key held to one domain bound this to another domain, or unbound it",
+            "description": "A key held to one domain bound this to another domain, or unbound it; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19042,6 +19507,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "429": {
             "description": "Over the rate limit (rate_limit_exceeded, with Retry-After)",
             "headers": {
@@ -19102,6 +19582,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19212,7 +19707,7 @@
             }
           },
           "403": {
-            "description": "A key held to one domain bound this to another domain, or unbound it",
+            "description": "A key held to one domain bound this to another domain, or unbound it; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19314,6 +19809,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19430,7 +19940,7 @@
             }
           },
           "403": {
-            "description": "Plan domain limit reached, an own tracking or unsubscribe subdomain needs a paid plan, or the key is held to one domain (it cannot create domains)",
+            "description": "Plan domain limit reached, an own tracking or unsubscribe subdomain needs a paid plan, or the key is held to one domain (it cannot create domains); refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19571,6 +20081,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -19646,6 +20171,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19756,7 +20296,7 @@
             }
           },
           "403": {
-            "description": "Catch-all receiving or an own tracking / unsubscribe subdomain needs a paid plan, or the team's subdomain of the shared domain, which is read-only",
+            "description": "Catch-all receiving or an own tracking / unsubscribe subdomain needs a paid plan, or the team's subdomain of the shared domain, which is read-only; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -19887,7 +20427,7 @@
             }
           },
           "403": {
-            "description": "Team suspended, not available for this team, or the team's subdomain of the shared domain, which is read-only",
+            "description": "Team suspended, not available for this team, or the team's subdomain of the shared domain, which is read-only; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20005,7 +20545,7 @@
             }
           },
           "403": {
-            "description": "The team's subdomain of the shared domain, which is read-only",
+            "description": "The team's subdomain of the shared domain, which is read-only; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20108,7 +20648,7 @@
             }
           },
           "403": {
-            "description": "Plan domain limit reached, an own tracking subdomain needs a paid plan, or the key is held to one domain",
+            "description": "Plan domain limit reached, an own tracking subdomain needs a paid plan, or the key is held to one domain; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20226,6 +20766,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found, or a domain other than the one the calling key is held to",
             "content": {
@@ -20302,6 +20857,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20403,7 +20973,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key: a sending_access key, an inbox-scoped key, or a domain_id outside the calling key's domain",
+            "description": "Restricted API key: a sending_access key, an inbox-scoped key, or a domain_id outside the calling key's domain; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20529,6 +21099,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -20615,6 +21200,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20730,6 +21330,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -20818,7 +21433,7 @@
             }
           },
           "403": {
-            "description": "Plan webhook endpoint limit reached",
+            "description": "Plan webhook endpoint limit reached; refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -20944,6 +21559,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -21019,6 +21649,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21115,6 +21760,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21229,6 +21889,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -21330,6 +22005,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21481,6 +22171,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -21597,6 +22302,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -21686,6 +22406,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -21850,6 +22585,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -21952,6 +22702,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -22039,6 +22804,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -22113,6 +22893,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22253,6 +23048,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -22328,6 +23138,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22428,7 +23253,7 @@
             }
           },
           "403": {
-            "description": "A bounce or complaint entry, which is permanent",
+            "description": "A bounce or complaint entry, which is permanent; refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22568,7 +23393,7 @@
             }
           },
           "403": {
-            "description": "A key held to one domain asked for another domain's opt-outs",
+            "description": "A key held to one domain asked for another domain's opt-outs; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22668,7 +23493,7 @@
             }
           },
           "403": {
-            "description": "A key held to one domain recorded an opt-out for another domain or for the whole team",
+            "description": "A key held to one domain recorded an opt-out for another domain or for the whole team; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22756,6 +23581,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -22896,6 +23736,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -22973,6 +23828,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23071,6 +23941,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23202,6 +24087,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -23279,6 +24179,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23382,6 +24297,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -23457,6 +24387,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23597,6 +24542,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -23701,6 +24661,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -23836,6 +24811,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -23923,6 +24913,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24041,6 +25046,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -24130,7 +25150,7 @@
             }
           },
           "403": {
-            "description": "An agent key tried to enable",
+            "description": "An agent key tried to enable; refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24268,6 +25288,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -24345,6 +25380,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24458,7 +25508,7 @@
             }
           },
           "403": {
-            "description": "An agent key tried to enable",
+            "description": "An agent key tried to enable; refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24591,6 +25641,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -24669,6 +25734,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24775,6 +25855,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -24923,6 +26018,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -25040,6 +26150,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -25115,6 +26240,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25216,6 +26356,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25333,6 +26488,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25472,6 +26642,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -25579,6 +26764,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "429": {
             "description": "Over the rate limit (rate_limit_exceeded, with Retry-After)",
             "headers": {
@@ -25639,6 +26839,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25756,7 +26971,7 @@
             }
           },
           "403": {
-            "description": "The team is on the Free plan (plan_limit_reached)",
+            "description": "The team is on the Free plan (plan_limit_reached); refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -25912,6 +27127,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "422": {
             "description": "Validation error",
             "content": {
@@ -25987,6 +27217,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26094,7 +27339,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26208,7 +27453,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26312,7 +27557,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26441,7 +27686,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26545,7 +27790,7 @@
             }
           },
           "403": {
-            "description": "The caller may not revoke this grant",
+            "description": "The caller may not revoke this grant; refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26661,7 +27906,7 @@
             }
           },
           "403": {
-            "description": "A key held to one domain or one inbox, or an agent naming an event about held mail",
+            "description": "A key held to one domain or one inbox, or an agent naming an event about held mail; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26787,7 +28032,7 @@
             }
           },
           "403": {
-            "description": "An agent naming an event about held mail",
+            "description": "An agent naming an event about held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -26905,7 +28150,7 @@
             }
           },
           "403": {
-            "description": "The plan's inbox limit, or a restricted API key",
+            "description": "The plan's inbox limit, or a restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27075,6 +28320,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Pagination cursor not found",
             "content": {
@@ -27167,6 +28427,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27280,6 +28555,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27412,7 +28702,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key or role",
+            "description": "Restricted API key or role; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27503,6 +28793,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27615,7 +28920,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27734,6 +29039,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -27833,7 +29153,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key or role",
+            "description": "Restricted API key or role; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -27952,6 +29272,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -28037,6 +29372,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28175,6 +29525,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -28276,6 +29641,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28534,7 +29914,7 @@
             }
           },
           "403": {
-            "description": "include_quarantined from an inbox-scoped key",
+            "description": "include_quarantined from an inbox-scoped key; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28743,7 +30123,7 @@
             }
           },
           "403": {
-            "description": "include_quarantined from an inbox-scoped key",
+            "description": "include_quarantined from an inbox-scoped key; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -28873,6 +30253,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -28969,6 +30364,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29096,6 +30506,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -29194,6 +30619,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29331,6 +30771,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Inbox, thread or label not found",
             "content": {
@@ -29445,6 +30900,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29604,7 +31074,7 @@
             }
           },
           "403": {
-            "description": "include_quarantined from an inbox-scoped key",
+            "description": "include_quarantined from an inbox-scoped key; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29756,7 +31226,7 @@
             }
           },
           "403": {
-            "description": "Quarantined, or include_quarantined from an inbox-scoped key",
+            "description": "Quarantined, or include_quarantined from an inbox-scoped key; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -29895,7 +31365,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30036,7 +31506,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, trust_sender refused, or an MCP connection releasing mail held for its content",
+            "description": "Restricted API key, trust_sender refused, or an MCP connection releasing mail held for its content; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30230,6 +31700,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -30391,7 +31876,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30581,7 +32066,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30753,7 +32238,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -30913,7 +32398,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31080,7 +32565,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31224,7 +32709,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31376,7 +32861,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31518,7 +33003,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31714,7 +33199,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -31858,7 +33343,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -32029,7 +33514,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -32200,7 +33685,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail",
+            "description": "Restricted API key, the inbox's or the shared domain's rules, or held mail; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -32420,6 +33905,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "429": {
             "description": "Over the rate limit (rate_limit_exceeded, with Retry-After)",
             "headers": {
@@ -32470,6 +33970,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -32758,7 +34273,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33036,6 +34551,21 @@
               }
             }
           },
+          "403": {
+            "description": "Restricted API key: refused to a key held to one inbox (restricted_api_key)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
           "404": {
             "description": "Not found",
             "content": {
@@ -33136,6 +34666,21 @@
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked API key",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/RequestId"
+              }
+            }
+          },
+          "403": {
+            "description": "Restricted API key: refused to a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33251,7 +34796,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33352,7 +34897,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33412,7 +34957,7 @@
       "get": {
         "operationId": "emails.receiving.list",
         "summary": "List received emails",
-        "description": "Mail received at the team's receiving domains and inboxes, newest first (`after` pages toward older mail), with cursor pagination. Needs a full access key; a domain-scoped key lists mail addressed to its domain only, an inbox-scoped key mail delivered into its inbox. Mail held for screening or in quarantine is left out unless a full access key asks for it (include_quarantined, quarantined). With wait, the request is held until matching mail arrives (long-poll). An inbox_id the key can't reach answers 404 at once, without waiting; an inbox-scoped key naming another inbox gets 403 restricted_api_key. Everything in a received email was written by whoever sent it, so its HTML is safe to show only in a sandbox.",
+        "description": "Mail received at the team's receiving domains and inboxes, newest first (`after` pages toward older mail), with cursor pagination. Needs a full access key; a domain-scoped key lists mail addressed to its domain only, an inbox-scoped key mail delivered into its inbox. Mail held for screening or in quarantine is left out unless a full access key asks for it (include_quarantined, quarantined). With wait, the request is held until matching mail arrives (long-poll). The inbox_id filter takes an inbox ID or its email address, as the /inboxes/{inbox_id} paths do. An inbox the key can't reach answers 404 at once, without waiting; an inbox-scoped key naming another inbox gets 403 restricted_api_key. Everything in a received email was written by whoever sent it, so its HTML is safe to show only in a sandbox.",
         "parameters": [
           {
             "schema": {
@@ -33472,11 +35017,10 @@
           {
             "schema": {
               "type": "string",
-              "format": "uuid",
-              "description": "BillionSend extension: only mail delivered into this inbox"
+              "description": "BillionSend extension: only mail delivered into this inbox, by inbox ID or email address (as in the /inboxes/{inbox_id} paths)"
             },
             "required": false,
-            "description": "BillionSend extension: only mail delivered into this inbox",
+            "description": "BillionSend extension: only mail delivered into this inbox, by inbox ID or email address (as in the /inboxes/{inbox_id} paths)",
             "name": "inbox_id",
             "in": "query"
           },
@@ -33588,7 +35132,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33721,7 +35265,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key, or the email is quarantined",
+            "description": "Restricted API key, or the email is quarantined; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33838,7 +35382,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -33976,7 +35520,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34104,7 +35648,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34217,7 +35761,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34370,7 +35914,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34498,7 +36042,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34612,7 +36156,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34729,7 +36273,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34833,7 +36377,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {
@@ -34926,7 +36470,7 @@
             }
           },
           "403": {
-            "description": "Restricted API key",
+            "description": "Restricted API key; refused to a sending-only key, a key held to one domain, a key held to one inbox (restricted_api_key)",
             "content": {
               "application/json": {
                 "schema": {

@@ -1692,11 +1692,12 @@ class EmailsReceivingResource:
         domain-scoped key lists mail addressed to its domain only, an inbox-scoped key
         mail delivered into its inbox. Mail held for screening or in quarantine is left
         out unless a full access key asks for it (include_quarantined, quarantined).
-        With wait, the request is held until matching mail arrives (long-poll). An
-        inbox_id the key can't reach answers 404 at once, without waiting; an inbox-
-        scoped key naming another inbox gets 403 restricted_api_key. Everything in a
-        received email was written by whoever sent it, so its HTML is safe to show only
-        in a sandbox.
+        With wait, the request is held until matching mail arrives (long-poll). The
+        inbox_id filter takes an inbox ID or its email address, as the
+        /inboxes/{inbox_id} paths do. An inbox the key can't reach answers 404 at once,
+        without waiting; an inbox-scoped key naming another inbox gets 403
+        restricted_api_key. Everything in a received email was written by whoever sent
+        it, so its HTML is safe to show only in a sandbox.
 
         ``GET /emails/receiving``
         """

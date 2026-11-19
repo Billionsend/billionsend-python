@@ -85,6 +85,15 @@ def test_boolean_query_parameters(client: BillionSend, mock: ContractMock) -> No
     assert mock.last.query == {"erase": ["true"]}
 
 
+def test_receiving_list_takes_an_inbox_id_or_an_email_address(
+    client: BillionSend, mock: ContractMock
+) -> None:
+    client.emails.receiving.list(inbox_id=ID)
+    assert mock.last.query == {"inbox_id": [ID]}
+    client.emails.receiving.list(inbox_id="agent@acme.billionsend.app")
+    assert mock.last.query == {"inbox_id": ["agent@acme.billionsend.app"]}
+
+
 def test_keyword_named_query_parameter(client: BillionSend, mock: ContractMock) -> None:
     client.inboxes.threads.search(
         "inbox@example.com", from_="boss@example.com", has_attachment=True

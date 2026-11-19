@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 (2026-11-19)
+
+The OpenAPI snapshot follows the published document again (the API's 2026-11-19 release). No method or type signature changes.
+
+- 403 `restricted_api_key` is declared on every operation a restricted key can be refused on (103 operations gained a 403 response, 74 had the refused action appended to its description); only the public `POST /agent/signup` has none. The contract tests check it for both clients.
+- `emails.receiving.list(inbox_id=...)` takes an inbox ID or the inbox's email address, as the `/inboxes/{inbox_id}` paths do. An unknown address, or one of another team, answers 404; a malformed one 422. A test holds the request shape for both forms.
+- API behaviour, not an SDK change: any path ending in `/` answers 404 `not_found` instead of 401 `missing_api_key`. The SDK still refuses an empty path parameter before sending.
+
 ## 0.2.0 (2026-11-19)
 
 The OpenAPI snapshot is now the published document (https://billionsend.com/docs/api.openapi.json); the SDK had been built against an older one, so `usage.get()` and a number of newer calls did not match the API. Every operation of the published API (180) is covered.
