@@ -33,6 +33,7 @@ from ..types import (
     BatchRemoveContactsResponse,
     BatchRemoveSuppressionsRequest,
     BatchRemoveSuppressionsResponse,
+    Brand,
     BroadcastIdResponse,
     CancelAutomationRunResponse,
     CancelBroadcastResponse,
@@ -168,6 +169,7 @@ from ..types import (
     ListWebhookEventsResponseDataItem,
     ListWebhooksResponse,
     ListWebhooksResponseDataItem,
+    LogoResponse,
     OAuthGrant,
     ReceivedEmailForwardRequest,
     ReceivedEmailReplyRequest,
@@ -185,6 +187,7 @@ from ..types import (
     RemoveInboxLabelResponse,
     RemoveInboxResponse,
     RemoveInboxThreadResponse,
+    RemoveLogoResponse,
     RemoveSegmentResponse,
     RemoveSuppressionResponse,
     RemoveTemplateResponse,
@@ -221,6 +224,7 @@ from ..types import (
     UpdateApiKeyRequest,
     UpdateApiKeyResponse,
     UpdateAutomationRequest,
+    UpdateBrandRequest,
     UpdateBroadcastRequest,
     UpdateContactPropertyRequest,
     UpdateContactRequest,
@@ -241,6 +245,7 @@ from ..types import (
     UpdateTemplateRequest,
     UpdateTopicRequest,
     UpdateWebhookRequest,
+    UploadLogoForm,
     UsageResponse,
     ValidateAutomationRequest,
     ValidateAutomationResponse,
@@ -249,6 +254,65 @@ from ..types import (
     VerificationRun,
     WebhookIdResponse,
 )
+
+
+class AsyncDomainsUnsubscribePageLogoResource:
+    """Operations on domains unsubscribe page logo."""
+
+    def __init__(self, client: AsyncAPIClient) -> None:
+        self._client = client
+
+    async def upload(
+        self,
+        id: str,
+        params: UploadLogoForm,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> LogoResponse:
+        """Upload a domain's unsubscribe page logo.
+
+        BillionSend extension. Sets this domain's own logo on its unsubscribe pages,
+        replacing any earlier one; send the image as `multipart/form-data` in a field
+        named `file`. PNG, JPEG or WebP, judged from the bytes, at most 2 MiB.
+        Afterwards `unsubscribe_page.logo_url` on Retrieve a domain returns the new
+        address. A domain without a logo of its own shows the team's (PUT /brand/logo).
+        On a plan without branding (Free) recipients see the built-in look until the
+        team upgrades.
+
+        ``PUT /domains/{id}/unsubscribe-page/logo``
+        """
+        response = await self._client.request(
+            "PUT",
+            f"/domains/{encode_path(id)}/unsubscribe-page/logo",
+            form=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("LogoResponse", response)
+
+    async def delete(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> RemoveLogoResponse:
+        """Remove a domain's unsubscribe page logo.
+
+        BillionSend extension. Removes this domain's own logo; its unsubscribe pages
+        then show the team's logo (GET /brand), or none. Removing a logo that is not
+        there succeeds.
+
+        ``DELETE /domains/{id}/unsubscribe-page/logo``
+        """
+        response = await self._client.request(
+            "DELETE",
+            f"/domains/{encode_path(id)}/unsubscribe-page/logo",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("RemoveLogoResponse", response)
 
 
 class AsyncEmailsReceivingAttachmentsResource:
@@ -900,6 +964,62 @@ class AsyncAutomationsRunsResource:
         return cast("CancelAutomationRunResponse", response)
 
 
+class AsyncBrandLogoResource:
+    """Operations on brand logo."""
+
+    def __init__(self, client: AsyncAPIClient) -> None:
+        self._client = client
+
+    async def upload(
+        self,
+        params: UploadLogoForm,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> LogoResponse:
+        """Upload the team logo.
+
+        BillionSend extension. Sets the team's logo, the one every domain's unsubscribe
+        page shows unless the domain has its own (PUT /domains/{id}/unsubscribe-
+        page/logo), and the team's picture in the dashboard; it replaces any earlier
+        one. Send the image as `multipart/form-data` in a field named `file`: PNG, JPEG
+        or WebP, judged from the bytes, at most 2 MiB. Needs a key made by an owner or
+        admin.
+
+        ``PUT /brand/logo``
+        """
+        response = await self._client.request(
+            "PUT",
+            "/brand/logo",
+            form=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("LogoResponse", response)
+
+    async def delete(
+        self,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> RemoveLogoResponse:
+        """Remove the team logo.
+
+        BillionSend extension. Removes the team's logo; pages of domains without a logo
+        of their own then show none. Removing a logo that is not there succeeds. Needs a
+        key made by an owner or admin.
+
+        ``DELETE /brand/logo``
+        """
+        response = await self._client.request(
+            "DELETE",
+            "/brand/logo",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("RemoveLogoResponse", response)
+
+
 class AsyncContactsBatchResource:
     """Operations on contacts batch."""
 
@@ -1334,6 +1454,14 @@ class AsyncDomainsClaimsResource:
             timeout=timeout,
         )
         return cast("DomainClaim", response)
+
+
+class AsyncDomainsUnsubscribePageResource:
+    """Operations on domains unsubscribe page."""
+
+    def __init__(self, client: AsyncAPIClient) -> None:
+        self._client = client
+        self.logo = AsyncDomainsUnsubscribePageLogoResource(client)
 
 
 class AsyncEmailsAttachmentsResource:
@@ -3487,6 +3615,61 @@ class AsyncAutomationsResource:
         return cast("AutomationMetricsResponse", response)
 
 
+class AsyncBrandResource:
+    """Operations on brand."""
+
+    def __init__(self, client: AsyncAPIClient) -> None:
+        self._client = client
+        self.logo = AsyncBrandLogoResource(client)
+
+    async def get(
+        self,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Brand:
+        """Retrieve the brand defaults.
+
+        BillionSend extension. The team's brand defaults for its hosted unsubscribe
+        pages (the dashboard's Settings → Brand): the logo, accent color, font, footer
+        address and the two footer switches. A domain's own `unsubscribe_page` overrides
+        any of them.
+
+        ``GET /brand``
+        """
+        response = await self._client.request(
+            "GET",
+            "/brand",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("Brand", response)
+
+    async def update(
+        self,
+        params: UpdateBrandRequest | None = None,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Brand:
+        """Update the brand defaults.
+
+        BillionSend extension. Changes the team's brand defaults; fields not sent keep
+        their value, null clears one. Needs a key made by an owner or admin (as the
+        dashboard's Brand settings do).
+
+        ``PATCH /brand``
+        """
+        response = await self._client.request(
+            "PATCH",
+            "/brand",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("Brand", response)
+
+
 class AsyncBroadcastsResource:
     """Operations on broadcasts."""
 
@@ -4202,6 +4385,7 @@ class AsyncDomainsResource:
     def __init__(self, client: AsyncAPIClient) -> None:
         self._client = client
         self.claims = AsyncDomainsClaimsResource(client)
+        self.unsubscribe_page = AsyncDomainsUnsubscribePageResource(client)
 
     async def create(
         self,
@@ -6197,6 +6381,8 @@ __all__ = [
     "AsyncAudiencesContactsResource",
     "AsyncAutomationsResource",
     "AsyncAutomationsRunsResource",
+    "AsyncBrandResource",
+    "AsyncBrandLogoResource",
     "AsyncBroadcastsResource",
     "AsyncContactPropertiesResource",
     "AsyncContactsResource",
@@ -6207,6 +6393,8 @@ __all__ = [
     "AsyncDeliverabilityResource",
     "AsyncDomainsResource",
     "AsyncDomainsClaimsResource",
+    "AsyncDomainsUnsubscribePageResource",
+    "AsyncDomainsUnsubscribePageLogoResource",
     "AsyncEmailsResource",
     "AsyncEmailsAttachmentsResource",
     "AsyncEmailsMetricsResource",

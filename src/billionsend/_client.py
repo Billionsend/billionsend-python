@@ -21,6 +21,7 @@ from .resources import (
     AsyncApiKeysResource,
     AsyncAudiencesResource,
     AsyncAutomationsResource,
+    AsyncBrandResource,
     AsyncBroadcastsResource,
     AsyncContactPropertiesResource,
     AsyncContactsResource,
@@ -41,6 +42,7 @@ from .resources import (
     AsyncWebhooksResource,
     AudiencesResource,
     AutomationsResource,
+    BrandResource,
     BroadcastsResource,
     ContactPropertiesResource,
     ContactsResource,
@@ -101,6 +103,7 @@ class BillionSend(SyncAPIClient):
     events: EventsResource
     logs: LogsResource
     oauth_grants: OauthGrantsResource
+    brand: BrandResource
 
     def __init__(
         self,
@@ -142,6 +145,7 @@ class BillionSend(SyncAPIClient):
         self.events = EventsResource(self)
         self.logs = LogsResource(self)
         self.oauth_grants = OauthGrantsResource(self)
+        self.brand = BrandResource(self)
 
     def __enter__(self) -> BillionSend:
         return self
@@ -182,6 +186,7 @@ class AsyncBillionSend(AsyncAPIClient):
     events: AsyncEventsResource
     logs: AsyncLogsResource
     oauth_grants: AsyncOauthGrantsResource
+    brand: AsyncBrandResource
 
     def __init__(
         self,
@@ -223,6 +228,7 @@ class AsyncBillionSend(AsyncAPIClient):
         self.events = AsyncEventsResource(self)
         self.logs = AsyncLogsResource(self)
         self.oauth_grants = AsyncOauthGrantsResource(self)
+        self.brand = AsyncBrandResource(self)
 
     async def __aenter__(self) -> AsyncBillionSend:
         return self

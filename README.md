@@ -29,7 +29,7 @@ client = BillionSend()  # reads BILLIONSEND_API_KEY
 email = client.emails.send(
     {
         "from": "Acme <hello@acme.dev>",
-        "to": ["ada@example.com"],
+        "to": ["success@simulator.amazonses.com"],
         "subject": "Welcome to Acme",
         "html": "<p>Thanks for signing up!</p>",
     }
@@ -162,12 +162,13 @@ Deliveries come from the fixed IP `51.161.117.92` with the header `User-Agent: B
 | `emails` (`.attachments`) | send, batch, list, get, update, cancel, delete, insights, share, unshare; `attachments.list`, `attachments.get` |
 | `emails.metrics` | `client.emails.metrics(...)` is the time series; `metrics.clients`, `metrics.countries`, `metrics.links` break opens and clicks down |
 | `emails.receiving` (`.attachments`) | received mail: list, get, delete, reply, forward; attachments and their extracted text |
-| `domains` (`.claims`) | create, list, get, update, delete, verify; `claims.create`, `claims.get`, `claims.verify` |
+| `domains` (`.claims`, `.unsubscribe_page.logo`) | create, list, get, update, delete, verify; `claims.create`, `claims.get`, `claims.verify`; `unsubscribe_page.logo.upload`, `unsubscribe_page.logo.delete` (the domain's own logo on its unsubscribe pages) |
+| `brand` (`.logo`) | the team's brand defaults for the hosted unsubscribe pages: `get`, `update`; `logo.upload`, `logo.delete` |
 | `api_keys` | create, list, update, delete |
 | `contacts` (`.topics`, `.segments`, `.batch`, `.imports`) | create, list, get, update, delete, preferences_link; `segments.list`, `segments.add`, `segments.remove`; `batch.create`, `batch.get`, `batch.remove`; `imports.create` (a CSV upload), `imports.list`, `imports.get` |
 | `audiences.contacts` | contacts addressed through an audience |
 | `contact_properties`, `segments` (`.contacts`), `topics` | contact data and grouping |
-| `broadcasts` | create, list, get, update, delete, send, duplicate, cancel, recipients, clicked_links |
+| `broadcasts` | create, list, get, update, delete, send, duplicate, cancel, recipients, clicked_links; `dormant_check` and `include_dormant` on create, update and get switch the check for contacts who stopped opening |
 | `templates` | create, list, get, update, delete, publish, duplicate |
 | `webhooks` (`.events`) | create, list, get, update, delete, rotate_signing_secret; `events.list`, `events.get`, `events.replay`, `events.attempts.list` |
 | `suppressions` (`.batch`), `unsubscribes` | suppression list (`batch.add` takes `emails` and `domains`, `batch.remove`; `list(kind="email" \| "domain" \| "all")`; an entry's `email` is `None` on a domain entry, and `removable` is `False` for a bounce or a complaint) and opt-outs (`unsubscribes.list`, `unsubscribes.create`) |
@@ -207,6 +208,27 @@ while job["status"] in ("queued", "in_progress"):
     time.sleep(2)
     job = client.contacts.imports.get(started["id"])
 print(job["status"], job["counts"])
+```
+
+## Brand and unsubscribe page logos
+
+`brand` holds the team's defaults for the hosted unsubscribe pages (logo, accent color, font, footer address, the "Powered by" line, the topic list); a domain overrides them in `domains.update(id, {"unsubscribe_page": {...}})`, which also takes `support_url` and `powered_by` (`None` follows the team). A logo is a `multipart/form-data` upload in the field `file`: PNG, JPEG or WebP (judged from the content), at most 2 MiB. Pass an open file (it keeps its own name), `bytes`, or a tuple of the file name and content (optionally followed by the content type). Writing the brand needs a key made by an owner or admin; a domain-scoped key is refused with 403 `restricted_api_key`.
+
+```python
+brand = client.brand.update({"accent_color": "#2B44FF", "font": "geist", "powered_by": False})
+
+with open("logo.png", "rb") as logo:
+    uploaded = client.brand.logo.upload({"file": logo})
+print(uploaded["logo_url"])
+
+# one domain with its own logo and support link
+with open("acme-logo.png", "rb") as logo:
+    client.domains.unsubscribe_page.logo.upload(
+        domain_id, {"file": ("acme-logo.png", logo, "image/png")}
+    )
+client.domains.update(domain_id, {"unsubscribe_page": {"support_url": "https://acme.dev/support"}})
+
+client.brand.logo.delete()
 ```
 
 ## Pagination
@@ -257,7 +279,7 @@ A header value the transport cannot send (a non-ASCII character or a control cha
 
 ## Retries
 
-A 429 is retried for every method: the API answers it before it writes anything, so repeating is always safe, with or without an idempotency key. The other failures are retried only when repeating the request is safe: GET, PUT and DELETE, and any request carrying an idempotency key (every send does, and `events.send`). That covers 5xx, no answer at all (connection failure, timeout) and, for a keyed request, 409 `concurrent_idempotent_requests` (a retry that caught the first attempt still running). The wait is the answer's `Retry-After` (seconds or an HTTP date) when there is one, otherwise exponential backoff with jitter (0.5 s, 1 s, 2 s… up to 8 s). An answer asking to wait more than 60 seconds, such as a used-up daily quota, is raised at once. `max_retries` (default 2) bounds the retries of one call; `0` turns them off.
+A 429 is retried for every method: the API answers it before it writes anything, so repeating is always safe, with or without an idempotency key. The other failures are retried only when repeating the request is safe: GET, PUT and DELETE, and any request carrying an idempotency key (every send does, and `events.send`). A multipart upload (the logo `PUT`s, `contacts.imports.create`) is never repeated after a 5xx or a lost connection, since a file object cannot be replayed; only a 429 repeats it. That covers 5xx, no answer at all (connection failure, timeout) and, for a keyed request, 409 `concurrent_idempotent_requests` (a retry that caught the first attempt still running). The wait is the answer's `Retry-After` (seconds or an HTTP date) when there is one, otherwise exponential backoff with jitter (0.5 s, 1 s, 2 s… up to 8 s). An answer asking to wait more than 60 seconds, such as a used-up daily quota, is raised at once. `max_retries` (default 2) bounds the retries of one call; `0` turns them off.
 
 ## Configuration
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0 (2026-11-20)
+
+The OpenAPI snapshot follows the published document (186 operations). New resource `brand`, logo uploads for domains, and new fields.
+
+- New: `brand.get()`, `brand.update(...)` (`accent_color`, `font`, `company_address`, `powered_by`, `show_topics`; `None` clears a field), `brand.logo.upload({"file": ...})`, `brand.logo.delete()`. The team's brand defaults for the hosted unsubscribe pages; `Brand` carries the read-only `powered_by_locked` and `branding_locked`. Writing needs a key made by an owner or admin; a domain-scoped key gets 403 `restricted_api_key`.
+- New: `domains.unsubscribe_page.logo.upload(id, {"file": ...})` and `domains.unsubscribe_page.logo.delete(id)`.
+- A logo upload is a multipart `PUT` with the field `file` (PNG, JPEG or WebP, at most 2 MiB; 404 when the deployment has no logo storage, 422 for a wrong format or size). The file is `bytes`, a binary file object or a `(file name, content[, content type])` tuple. An open file now keeps its own file name in the form (it was sent as `file`); the content type follows from the name.
+- A multipart upload is no longer repeated after a 5xx or a lost connection, whatever its method (a `PUT` upload was repeated before; a file object cannot be replayed). A 429 still repeats it.
+- Domains: `unsubscribe_page` gains `support_url` and `powered_by` (writable with `domains.update`; `None` clears the link or follows the team's default) and the read-only `powered_by_effective`; `logo_url` is `None` when no logo storage is configured.
+- Broadcasts: `dormant_check` and `include_dormant` (booleans, optional on `create` and `update`, always present on `get`) switch the check that sends a "still want these?" email to contacts who stopped opening instead of the broadcast, and whether contacts marked dormant are included.
+- Tests: every new method through the sync and the async client (request shape, multipart parts read back from the wire, answers, retries); the README example for brand and logos is run.
+
 ## 0.2.2 (2026-11-19)
 
 The OpenAPI snapshot follows the published document (the API's 2026-11-19 release, 180 operations).

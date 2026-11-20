@@ -53,6 +53,7 @@ __all__ = [
     "BatchRemoveSuppressionsRequest",
     "BatchRemoveSuppressionsResponse",
     "BatchRemoveSuppressionsResponseNotRemovedItem",
+    "Brand",
     "BroadcastIdResponse",
     "CancelAutomationRunResponse",
     "CancelBroadcastResponse",
@@ -251,6 +252,7 @@ __all__ = [
     "ListWebhookEventsResponseDataItem",
     "ListWebhooksResponse",
     "ListWebhooksResponseDataItem",
+    "LogoResponse",
     "OAuthGrant",
     "OAuthGrantClient",
     "ReceivedEmailForwardRequest",
@@ -271,6 +273,7 @@ __all__ = [
     "RemoveInboxLabelResponse",
     "RemoveInboxResponse",
     "RemoveInboxThreadResponse",
+    "RemoveLogoResponse",
     "RemoveSegmentResponse",
     "RemoveSuppressionResponse",
     "RemoveTemplateResponse",
@@ -327,6 +330,7 @@ __all__ = [
     "UpdateAutomationRequest",
     "UpdateAutomationRequestLayout",
     "UpdateAutomationRequestLayoutNodesValue",
+    "UpdateBrandRequest",
     "UpdateBroadcastRequest",
     "UpdateContactPropertyRequest",
     "UpdateContactRequest",
@@ -351,6 +355,7 @@ __all__ = [
     "UpdateTemplateRequest",
     "UpdateTopicRequest",
     "UpdateWebhookRequest",
+    "UploadLogoForm",
     "UsageResponse",
     "UsageResponseAiCredits",
     "UsageResponseAutomationRuns",
@@ -896,6 +901,8 @@ CreateBroadcastRequest = TypedDict(
         "preview_text": NotRequired[str],
         "template": NotRequired[SendTemplate],
         "topic_id": NotRequired[str | None],
+        "dormant_check": NotRequired[bool],
+        "include_dormant": NotRequired[bool],
         "send": NotRequired[bool],
         "scheduled_at": NotRequired[str],
     },
@@ -976,6 +983,8 @@ GetBroadcastResponse = TypedDict(
         "domain_id": str | None,
         "html": str | None,
         "text": str | None,
+        "dormant_check": bool,
+        "include_dormant": bool,
     },
 )
 
@@ -992,6 +1001,8 @@ UpdateBroadcastRequest = TypedDict(
         "reply_to": NotRequired[str | list[str]],
         "preview_text": NotRequired[str],
         "topic_id": NotRequired[str | None],
+        "dormant_check": NotRequired[bool],
+        "include_dormant": NotRequired[bool],
     },
 )
 
@@ -1125,13 +1136,18 @@ class CreateDomainRequest(TypedDict):
 
 class CreateDomainResponseUnsubscribePage(TypedDict):
     """BillionSend extension: this domain's own look for its unsubscribe pages. A null
-    field falls back to the team's default page, then to the built-in default.
+    field falls back to the team's default page, then to the built-in default. On a plan
+    without branding (Free) recipients see the built-in look and logo whatever is saved;
+    the saved look applies again on a paid plan.
     """
 
     brand_name: str | None
     message: str | None
     success_message: str | None
     redirect_url: str | None
+    support_url: str | None
+    powered_by: bool | None
+    powered_by_effective: bool
     background_color: str | None
     text_color: str | None
     accent_color: str | None
@@ -1184,13 +1200,18 @@ class CreateDomainResponse(TypedDict):
 
 class ListDomainsResponseDataItemUnsubscribePage(TypedDict):
     """BillionSend extension: this domain's own look for its unsubscribe pages. A null
-    field falls back to the team's default page, then to the built-in default.
+    field falls back to the team's default page, then to the built-in default. On a plan
+    without branding (Free) recipients see the built-in look and logo whatever is saved;
+    the saved look applies again on a paid plan.
     """
 
     brand_name: str | None
     message: str | None
     success_message: str | None
     redirect_url: str | None
+    support_url: str | None
+    powered_by: bool | None
+    powered_by_effective: bool
     background_color: str | None
     text_color: str | None
     accent_color: str | None
@@ -1234,13 +1255,18 @@ class ListDomainsResponse(TypedDict):
 
 class GetDomainResponseUnsubscribePage(TypedDict):
     """BillionSend extension: this domain's own look for its unsubscribe pages. A null
-    field falls back to the team's default page, then to the built-in default.
+    field falls back to the team's default page, then to the built-in default. On a plan
+    without branding (Free) recipients see the built-in look and logo whatever is saved;
+    the saved look applies again on a paid plan.
     """
 
     brand_name: str | None
     message: str | None
     success_message: str | None
     redirect_url: str | None
+    support_url: str | None
+    powered_by: bool | None
+    powered_by_effective: bool
     background_color: str | None
     text_color: str | None
     accent_color: str | None
@@ -1295,13 +1321,16 @@ class GetDomainResponse(TypedDict):
 class UpdateDomainRequestUnsubscribePage(TypedDict):
     """BillionSend extension: this domain's own look for its unsubscribe pages. Fields not
     sent keep their value; null clears one, and a cleared field falls back to the team's
-    default page. logo_url is read-only here: the logo is uploaded in the dashboard.
+    default page. logo_url is read-only here: upload the logo with PUT
+    /domains/{id}/unsubscribe-page/logo.
     """
 
     brand_name: NotRequired[str | None]
     message: NotRequired[str | None]
     success_message: NotRequired[str | None]
     redirect_url: NotRequired[str | None]
+    support_url: NotRequired[str | None]
+    powered_by: NotRequired[bool | None]
     background_color: NotRequired[str | None]
     text_color: NotRequired[str | None]
     accent_color: NotRequired[str | None]
@@ -1331,6 +1360,20 @@ class UpdateDomainRequest(TypedDict):
 class RemoveDomainResponse(TypedDict):
     object: Literal["domain"]
     id: str
+    deleted: Literal[True]
+
+
+class UploadLogoForm(TypedDict):
+    file: NotRequired[FileUpload]
+
+
+class LogoResponse(TypedDict):
+    object: Literal["logo"]
+    logo_url: str
+
+
+class RemoveLogoResponse(TypedDict):
+    object: Literal["logo"]
     deleted: Literal[True]
 
 
@@ -2338,6 +2381,28 @@ class VerificationRun(TypedDict):
     metered: int | None
     created_at: str
     finished_at: str | None
+
+
+class Brand(TypedDict):
+    object: Literal["brand"]
+    logo_url: str | None
+    accent_color: str | None
+    font: Literal["geist", "system", "serif", "mono"] | None
+    company_address: str | None
+    powered_by: bool
+    powered_by_locked: bool
+    show_topics: bool
+    branding_locked: bool
+
+
+class UpdateBrandRequest(TypedDict):
+    """Fields not sent keep their value."""
+
+    accent_color: NotRequired[str | None]
+    font: NotRequired[Literal["geist", "system", "serif", "mono"] | None]
+    company_address: NotRequired[str | None]
+    powered_by: NotRequired[bool]
+    show_topics: NotRequired[bool]
 
 
 class UsageResponseEmailsDaily(TypedDict):

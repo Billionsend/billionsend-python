@@ -38,6 +38,7 @@ MARKERS = {
     "resume a stream": "last_event_id=saved_position",
     "webhooks": "def billionsend_webhook()",
     "csv import": 'with open("contacts.csv"',
+    "brand": "client.brand.update(",
     "pagination": "client.contacts.list_all(limit=100)",
     "errors": "except NotFoundError:",
 }
@@ -269,6 +270,27 @@ def test_csv_import_example(
     assert upload.body["on_conflict"] == "skip"
     assert [c.request.method for c in env.calls] == ["POST", "GET", "GET", "GET"]
     assert capsys.readouterr().out.startswith("completed ")
+
+
+def test_brand_example(env: ContractMock, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    png = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00"
+    (tmp_path / "logo.png").write_bytes(png)
+    (tmp_path / "acme-logo.png").write_bytes(png)
+    domain_id = "6a1f1d38-3c55-4a4e-9a57-0f2b3c4d5e6f"
+    run(block("brand"), client=BillionSend(), domain_id=domain_id)
+    assert [(c.request.method, c.request.url.path) for c in env.calls] == [
+        ("PATCH", "/brand"),
+        ("PUT", "/brand/logo"),
+        ("PUT", f"/domains/{domain_id}/unsubscribe-page/logo"),
+        ("PATCH", f"/domains/{domain_id}"),
+        ("DELETE", "/brand/logo"),
+    ]
+    assert env.calls[0].body == {"accent_color": "#2B44FF", "font": "geist", "powered_by": False}
+    assert env.calls[1].body["file"] == png.decode("latin-1")
+    assert 'filename="logo.png"' in env.calls[1].request.content.decode("latin-1")
+    assert 'filename="acme-logo.png"' in env.calls[2].request.content.decode("latin-1")
+    assert env.calls[3].body == {"unsubscribe_page": {"support_url": "https://acme.dev/support"}}
 
 
 def test_pagination_example(env: ContractMock, capsys: pytest.CaptureFixture[str]) -> None:

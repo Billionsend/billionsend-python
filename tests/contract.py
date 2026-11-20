@@ -438,7 +438,7 @@ class ContractMock:
 
 
 def parse_multipart(content_type: str, content: bytes) -> dict[str, Any]:
-    """The fields of a multipart body: a file as its content, anything else as text."""
+    """The fields of a multipart body: a file as its bytes (latin-1), anything else as text."""
     message = BytesParser(policy=HTTP).parsebytes(
         b"Content-Type: " + content_type.encode("ascii") + b"\r\n\r\n" + content
     )
@@ -449,7 +449,8 @@ def parse_multipart(content_type: str, content: bytes) -> dict[str, Any]:
         assert name not in fields, f"the multipart field {name} was sent twice"
         payload = part.get_payload(decode=True)
         assert isinstance(payload, bytes)
-        fields[name] = payload.decode("utf-8")
+        # A file may be binary (an image): the schema only wants a string, so keep every byte.
+        fields[name] = payload.decode("latin-1" if part.get_filename() else "utf-8")
     return fields
 
 

@@ -96,6 +96,14 @@ def _named(file: tuple[Any, ...]) -> tuple[Any, ...]:
     return (name, *file[1:])
 
 
+def _file(key: str, value: Any) -> tuple[Any, ...]:
+    """A bare file: an open file keeps its own name (``logo.png``), anything else the field's."""
+    name = getattr(value, "name", None)
+    if isinstance(name, str) and name and not name.startswith("<"):
+        return _named((os.path.basename(name), value))
+    return (key, value)
+
+
 def encode_form(
     form: Mapping[str, Any] | None,
 ) -> tuple[dict[str, str] | None, list[tuple[str, Any]] | None]:
@@ -114,7 +122,7 @@ def encode_form(
         if value is None:
             continue
         if isinstance(value, bytes | tuple) or hasattr(value, "read"):
-            files.append((key, _named(value) if isinstance(value, tuple) else (key, value)))
+            files.append((key, _named(value) if isinstance(value, tuple) else _file(key, value)))
         elif isinstance(value, dict | list):
             data[key] = json.dumps(value, separators=(",", ":"))
         elif isinstance(value, bool):
@@ -322,7 +330,13 @@ class BaseClient:
         return out, keyed
 
     def _retry_delay(
-        self, attempt: int, error: BillionSendError, *, method: str, keyed: bool
+        self,
+        attempt: int,
+        error: BillionSendError,
+        *,
+        method: str,
+        keyed: bool,
+        upload: bool = False,
     ) -> float | None:
         """Seconds to wait before retrying after ``error``, or None to raise it.
 
@@ -330,12 +344,14 @@ class BaseClient:
         so repeating is always safe); and, for requests that are safe to repeat (GET,
         PUT, DELETE…, or any request with an idempotency key), a 5xx or no answer at
         all, and for a keyed request whose first attempt is still running a 409
-        concurrent_idempotent_requests.
+        concurrent_idempotent_requests. A multipart upload (``upload``) is treated as
+        not safe to repeat whatever its method: a file object cannot be replayed, and
+        only a 429 or an idempotency key makes it retried.
         """
         if attempt >= self.max_retries:
             return None
         status = error.status_code
-        if status != 429 and method not in IDEMPOTENT_METHODS and not keyed:
+        if status != 429 and (upload or method not in IDEMPOTENT_METHODS) and not keyed:
             return None
         if status == 429 or isinstance(error, APIConnectionError):
             pass
@@ -465,7 +481,9 @@ class SyncAPIClient(BaseClient):
                     return parse_json(response)
                 error = error_from_response(response)
                 response.close()
-            delay = self._retry_delay(attempt, error, method=method, keyed=keyed)
+            delay = self._retry_delay(
+                attempt, error, method=method, keyed=keyed, upload=form is not None
+            )
             if delay is None:
                 raise error from cause
             self._sleep(delay)
@@ -611,7 +629,9 @@ class AsyncAPIClient(BaseClient):
                     return parse_json(response)
                 error = error_from_response(response)
                 await response.aclose()
-            delay = self._retry_delay(attempt, error, method=method, keyed=keyed)
+            delay = self._retry_delay(
+                attempt, error, method=method, keyed=keyed, upload=form is not None
+            )
             if delay is None:
                 raise error from cause
             await self._sleep(delay)

@@ -21,6 +21,8 @@ from .contract import OPERATION_KEYS, OPERATIONS, SNAPSHOT, ContractMock, exampl
 ID = "6a1f1d38-3c55-4a4e-9a57-0f2b3c4d5e6f"
 ID2 = "7b2e2e49-4d66-4b5f-8b68-1a3c4d5e6f70"
 INBOX = "support@example.com"
+# The 8-byte PNG signature and a minimal IHDR: enough for a file the SDK only forwards.
+PNG = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00"
 
 Call = Callable[[Any, Any], Any]
 
@@ -68,6 +70,17 @@ CALLS: dict[tuple[str, str], Call] = {
     ("POST", "/domains/claim"): lambda c, b: c.domains.claims.create(b),
     ("GET", "/domains/{id}/claim"): lambda c, b: c.domains.claims.get(ID),
     ("POST", "/domains/{id}/claim/verify"): lambda c, b: c.domains.claims.verify(ID),
+    ("PUT", "/domains/{id}/unsubscribe-page/logo"): lambda c, b: (
+        c.domains.unsubscribe_page.logo.upload(ID, b)
+    ),
+    ("DELETE", "/domains/{id}/unsubscribe-page/logo"): lambda c, b: (
+        c.domains.unsubscribe_page.logo.delete(ID)
+    ),
+    # Brand
+    ("GET", "/brand"): lambda c, b: c.brand.get(),
+    ("PATCH", "/brand"): lambda c, b: c.brand.update(b),
+    ("PUT", "/brand/logo"): lambda c, b: c.brand.logo.upload(b),
+    ("DELETE", "/brand/logo"): lambda c, b: c.brand.logo.delete(),
     # API keys
     ("POST", "/api-keys"): lambda c, b: c.api_keys.create(b),
     ("GET", "/api-keys"): lambda c, b: c.api_keys.list(),
@@ -303,7 +316,9 @@ FORMS: dict[tuple[str, str], Any] = {
         "column_map": json.dumps({"email": "Email", "first_name": "First Name"}),
         "on_conflict": "skip",
         "segments": json.dumps([{"id": ID}]),
-    }
+    },
+    ("PUT", "/domains/{id}/unsubscribe-page/logo"): {"file": ("logo.png", PNG, "image/png")},
+    ("PUT", "/brand/logo"): {"file": ("logo.webp", b"RIFF\x1a\x00\x00\x00WEBPVP8 ", "image/webp")},
 }
 
 
@@ -318,7 +333,7 @@ def body_for(key: tuple[str, str]) -> Any:
 
 
 def test_table_matches_the_contract() -> None:
-    assert len(OPERATION_KEYS) == 180
+    assert len(OPERATION_KEYS) == 186
     assert set(CALLS) == OPERATION_KEYS
 
 
@@ -403,7 +418,7 @@ def test_sync_and_async_have_the_same_surface() -> None:
         async_methods |= _public_methods(getattr(async_, name), name)
     assert sync_methods == async_methods
     operations = {m for m in sync_methods if not m.endswith("_all")}
-    assert len(operations) == len(OPERATION_KEYS) == 180
+    assert len(operations) == len(OPERATION_KEYS) == 186
 
 
 def test_idempotency_key_where_the_contract_declares_it() -> None:
