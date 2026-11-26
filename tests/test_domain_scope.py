@@ -15,6 +15,7 @@ from billionsend.types import (
     BatchAddSuppressionsRequest,
     CreateSuppressionRequest,
     DomainDeliverability,
+    GetDomainResponseSendingLimits,
     GetSuppressionResponse,
     ListSuppressionsResponse,
     ListSuppressionsResponseDataItem,
@@ -22,7 +23,7 @@ from billionsend.types import (
 )
 
 from .api import Api
-from .contract import ContractMock, example
+from .contract import OPERATIONS, ContractMock, example
 
 ID = "6a1f1d38-3c55-4a4e-9a57-0f2b3c4d5e6f"
 ID2 = "7b2f2e49-4d66-4b5f-8b68-1a3c4d5e6f70"
@@ -36,6 +37,7 @@ EMAIL_ENTRY: GetSuppressionResponse = {
     "removable": False,
     "origin": "bounce",
     "source_id": None,
+    "note": None,
     "created_at": CREATED,
     "object": "suppression",
 }
@@ -47,6 +49,7 @@ DOMAIN_ENTRY: GetSuppressionResponse = {
     "removable": True,
     "origin": "manual",
     "source_id": None,
+    "note": "Spam trap domain",
     "created_at": CREATED,
     "object": "suppression",
 }
@@ -58,6 +61,7 @@ LIST_DOMAIN: ListSuppressionsResponseDataItem = {
     "removable": True,
     "origin": "manual",
     "source_id": None,
+    "note": "Spam trap domain",
     "created_at": CREATED,
 }
 LIST_EMAIL: ListSuppressionsResponseDataItem = {
@@ -68,6 +72,7 @@ LIST_EMAIL: ListSuppressionsResponseDataItem = {
     "removable": False,
     "origin": "bounce",
     "source_id": None,
+    "note": None,
     "created_at": CREATED,
 }
 
@@ -138,6 +143,50 @@ def test_a_domain_entry_has_no_email_to_assume(api: Api, mock: ContractMock) -> 
 def test_get_suppression_returns_a_domain_entry(api: Api, mock: ContractMock) -> None:
     mock.respond("GET", "/suppressions/{id}", json_body=DOMAIN_ENTRY)
     assert api.call("suppressions.get", ID2) == DOMAIN_ENTRY
+
+
+def test_a_note_goes_with_a_create_and_a_batch_add(api: Api, mock: ContractMock) -> None:
+    body: CreateSuppressionRequest = {"email": "trap@example.com", "note": "Spam trap"}
+    mock.respond("POST", "/suppressions", json_body={**EMAIL_ENTRY, "note": "Spam trap"})
+    entry = api.call("suppressions.create", body)
+    assert mock.last.body == {"email": "trap@example.com", "note": "Spam trap"}
+    assert entry["note"] == "Spam trap"
+    batch: BatchAddSuppressionsRequest = {"domains": ["c.example.org"], "note": "Reported"}
+    api.call("suppressions.batch.add", batch)
+    assert mock.last.body == batch
+
+
+def test_every_entry_answers_its_note(api: Api, mock: ContractMock) -> None:
+    listing = {"object": "list", "has_more": False, "data": [LIST_EMAIL, LIST_DOMAIN]}
+    mock.respond("GET", "/suppressions", json_body=listing)
+    entries = api.call("suppressions.list_all", kind="all")
+    assert [e["note"] for e in entries] == [None, "Spam trap domain"]
+
+
+SENDING_LIMITS: GetDomainResponseSendingLimits = {
+    "mode": "warming",
+    "warmup_day": 3,
+    "warmup_ends_on": "2026-12-23",
+    "window_started_at": "2026-11-26T08:00:00Z",
+    "cap": 400,
+    "used": 150,
+    "g": 1,
+    "g_reasons": ["provider_backoff"],
+    "t": 120,
+    "b": 80,
+    "parked": 25,
+    "next_window_at": "2026-11-27T08:00:00Z",
+    "hard_indicators": {"delivery": "ok", "content_review": "clear", "providers_in_backoff": 1},
+}
+
+
+def test_get_domain_reads_the_broadcast_limit(api: Api, mock: ContractMock) -> None:
+    op = next(o for o in OPERATIONS if o.key == ("GET", "/domains/{id}"))
+    answer = ContractMock.default_response(op).json()
+    answer["sending_limits"] = SENDING_LIMITS
+    mock.respond("GET", "/domains/{id}", json_body=answer)
+    domain = api.call("domains.get", ID)
+    assert domain["sending_limits"] == SENDING_LIMITS
 
 
 def test_deliverability_lists_each_domain(api: Api, mock: ContractMock) -> None:

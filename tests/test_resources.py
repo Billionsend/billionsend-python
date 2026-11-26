@@ -251,8 +251,8 @@ def test_the_usage_fields_the_readme_names_exist_in_the_contract() -> None:
     from .contract import SPEC
 
     schema = SPEC["components"]["schemas"]["UsageResponse"]["properties"]
-    sentence = next(line for line in README.splitlines() if "account usage (" in line)
-    named = re.findall(r"`([a-z_]+(?:\.[a-z_]+)?)`", sentence.split("account usage (")[1])
+    sentence = next(line for line in README.splitlines() if "account's usage (" in line)
+    named = re.findall(r"`([a-z_]+(?:\.[a-z_]+)?)`", sentence.split("account's usage (")[1])
     assert {"emails.daily", "emails.monthly", "contacts", "domains"} <= set(named)
     for path in named:
         head, _, tail = path.partition(".")

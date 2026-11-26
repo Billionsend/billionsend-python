@@ -547,7 +547,7 @@
                       "unsubscribed_at"
                     ]
                   },
-                  "description": "BillionSend extension: the domains this contact unsubscribed from through a link in their email. Marketing sends from those domains skip the contact; other domains still reach them. The team-wide opt-out is `unsubscribed`, not an entry here. Remove an entry with DELETE /unsubscribes/{id}."
+                  "description": "BillionSend extension: the domains this contact unsubscribed from through a link in their email. Mail from those domains skips the contact, transactional mail too unless the domain turned on `send_transactional_to_unsubscribed`; other domains still reach them. The team-wide switch is `unsubscribed`, not an entry here. An opt-out is permanent: only the recipient can undo it, from the hosted unsubscribe page."
                 },
                 "verification_status": {
                   "type": [
@@ -1003,7 +1003,7 @@
                       "unsubscribed_at"
                     ]
                   },
-                  "description": "BillionSend extension: the domains this contact unsubscribed from through a link in their email. Marketing sends from those domains skip the contact; other domains still reach them. The team-wide opt-out is `unsubscribed`, not an entry here. Remove an entry with DELETE /unsubscribes/{id}."
+                  "description": "BillionSend extension: the domains this contact unsubscribed from through a link in their email. Mail from those domains skips the contact, transactional mail too unless the domain turned on `send_transactional_to_unsubscribed`; other domains still reach them. The team-wide switch is `unsubscribed`, not an entry here. An opt-out is permanent: only the recipient can undo it, from the hosted unsubscribe page."
                 },
                 "verification_status": {
                   "type": [
@@ -1202,7 +1202,7 @@
                 "unsubscribed_at"
               ]
             },
-            "description": "BillionSend extension: the domains this contact unsubscribed from through a link in their email. Marketing sends from those domains skip the contact; other domains still reach them. The team-wide opt-out is `unsubscribed`, not an entry here. Remove an entry with DELETE /unsubscribes/{id}."
+            "description": "BillionSend extension: the domains this contact unsubscribed from through a link in their email. Mail from those domains skips the contact, transactional mail too unless the domain turned on `send_transactional_to_unsubscribed`; other domains still reach them. The team-wide switch is `unsubscribed`, not an entry here. An opt-out is permanent: only the recipient can undo it, from the hosted unsubscribe page."
           },
           "verification_status": {
             "type": [
@@ -3847,6 +3847,139 @@
                 "value"
               ]
             }
+          },
+          "sending_limits": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "warming",
+                  "limited",
+                  "unlimited",
+                  "exempt",
+                  "trusted"
+                ],
+                "description": "warming: inside the 30-day broadcast warm-up (it starts at the domain's first successful delivery here); limited: past it, but a warning holds g at 1; unlimited: broadcasts are not limited; exempt or trusted: the team is outside the limit"
+              },
+              "warmup_day": {
+                "type": "integer",
+                "description": "The day of the 30-day warm-up (1 on the first day); 0 before the first delivery"
+              },
+              "warmup_ends_on": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "When the warm-up ends; null before the first delivery"
+              },
+              "window_started_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "When the running 24-hour window opened; null while none runs (the next broadcast recipient opens one)"
+              },
+              "cap": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Broadcast recipients the window admits: max(200, g x (t + b)); of the window that would open now while none runs; null when unlimited"
+              },
+              "used": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "What the running window has used; null when unlimited"
+              },
+              "g": {
+                "type": "integer",
+                "description": "The growth multiplier: 2 while every signal is normal, 1 while a warning holds it"
+              },
+              "g_reasons": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "delivery_warning",
+                    "provider_backoff",
+                    "content_suspicious"
+                  ]
+                },
+                "description": "The warnings holding g at 1"
+              },
+              "t": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Transactional deliveries in the 24 hours before the window opened"
+              },
+              "b": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Broadcast deliveries in the previous window"
+              },
+              "parked": {
+                "type": "integer",
+                "description": "Broadcast recipients waiting for the next window"
+              },
+              "next_window_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "When the next window can open; null with nothing waiting"
+              },
+              "hard_indicators": {
+                "type": "object",
+                "properties": {
+                  "delivery": {
+                    "type": "string",
+                    "enum": [
+                      "ok",
+                      "warning",
+                      "paused"
+                    ]
+                  },
+                  "content_review": {
+                    "type": "string",
+                    "enum": [
+                      "clear",
+                      "held"
+                    ]
+                  },
+                  "providers_in_backoff": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "delivery",
+                  "content_review",
+                  "providers_in_backoff"
+                ]
+              }
+            },
+            "required": [
+              "mode",
+              "warmup_day",
+              "warmup_ends_on",
+              "window_started_at",
+              "cap",
+              "used",
+              "g",
+              "g_reasons",
+              "t",
+              "b",
+              "parked",
+              "next_window_at",
+              "hard_indicators"
+            ],
+            "description": "BillionSend extension, on GET /domains/{id} only: the broadcast limit this domain's registrable name is under (only broadcasts are limited; API, SMTP and automation mail never are). Read-only."
           }
         },
         "required": [
@@ -5067,6 +5200,12 @@
               "manual"
             ],
             "description": "Origin recorded on rows this request creates (default manual): bounce, complaint or manual; an address already suppressed keeps its origin"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "BillionSend extension: why the entry is blocked, up to 500 characters; shown as its detail in the dashboard and returned as `note`. Stored on the rows this request creates; an entry that already exists keeps its own"
           }
         }
       },
@@ -5198,6 +5337,12 @@
               "manual"
             ],
             "description": "Origin recorded on rows this request creates (default manual): bounce, complaint or manual; an address already suppressed keeps its origin"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500,
+            "description": "BillionSend extension: why the entry is blocked, up to 500 characters; shown as its detail in the dashboard and returned as `note`. Stored on the rows this request creates; an entry that already exists keeps its own"
           }
         }
       },
@@ -5261,6 +5406,13 @@
                   "format": "uuid",
                   "description": "Email id whose bounce/complaint created the entry"
                 },
+                "note": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "BillionSend extension: why the entry was added; null on an entry SES wrote"
+                },
                 "created_at": {
                   "type": "string"
                 }
@@ -5273,6 +5425,7 @@
                 "removable",
                 "origin",
                 "source_id",
+                "note",
                 "created_at"
               ]
             }
@@ -5336,6 +5489,13 @@
             "format": "uuid",
             "description": "Email id whose bounce/complaint created the entry"
           },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "BillionSend extension: why the entry was added; null on an entry SES wrote"
+          },
           "created_at": {
             "type": "string"
           },
@@ -5354,6 +5514,7 @@
           "removable",
           "origin",
           "source_id",
+          "note",
           "created_at",
           "object"
         ]

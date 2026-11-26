@@ -5,7 +5,7 @@ The official Python client for the [BillionSend](https://billionsend.com) API: s
 - Sync (`BillionSend`) and async (`AsyncBillionSend`) clients with the same resources and methods.
 - Fully typed: request parameters and responses are `TypedDict`s, checked by mypy in strict mode.
 - One dependency: [`httpx`](https://www.python-httpx.org/).
-- Every operation of the API, sends that never go out twice, retries, auto-paging iterators, live event streams that resume where they stopped, and webhook signature verification.
+- A method for every one of the API's 186 operations (the built-in snapshot of the API document has exactly the operations the published document has), sends that never go out twice, retries, auto-paging iterators, live event streams that resume where they stopped, and webhook signature verification.
 
 Documentation: https://billionsend.com/docs (Python guide: https://billionsend.com/docs/sdks/python).
 
@@ -151,7 +151,7 @@ def billionsend_webhook():
     return "", 204
 ```
 
-`verify_webhook` checks the `webhook-id`, `webhook-timestamp` and `webhook-signature` headers (Standard Webhooks: HMAC-SHA256 over `id.timestamp.body`), accepts any of several signatures (both secrets sign during a rotation's overlap) and refuses a timestamp more than `tolerance` seconds (default 300) from now, which bounds replays. It returns the parsed event (`type`, `created_at`, `data`). Parse the body only after verifying: re-serialised JSON does not verify. A secret that is not a `whsec_` secret raises `ValueError`.
+`verify_webhook` checks the `webhook-id`, `webhook-timestamp` and `webhook-signature` headers (Standard Webhooks: HMAC-SHA256 over `id.timestamp.body`), accepts any of several signatures (both secrets sign during a rotation's overlap) and refuses a timestamp more than `tolerance` seconds (default 300) from now, which bounds replays. It returns the parsed event (`type`, `created_at`, `data`). Parse the body only after verifying: re-serialised JSON does not verify. A secret that is not `whsec_` followed by base64 of 24 to 64 bytes raises `ValueError`, and a malformed or missing signature header, a timestamp outside the tolerance, or a body that is not a JSON object raises `WebhookVerificationError`.
 
 Deliveries come from the fixed IP `51.161.117.92` with the header `User-Agent: BillionSend-Webhooks/1.0 (+https://billionsend.com/docs/concepts/webhooks)`; if your endpoint sits behind a WAF or Cloudflare, allow them as [the webhooks guide](https://billionsend.com/docs/concepts/webhooks) describes. `deliverability.warning` and `deliverability.paused` events carry `scope` (`"team"` or `"domain"`) and `domain` (`{"id", "name"}`, `None` for the team).
 
@@ -165,27 +165,27 @@ Deliveries come from the fixed IP `51.161.117.92` with the header `User-Agent: B
 | `domains` (`.claims`, `.unsubscribe_page.logo`) | create, list, get, update, delete, verify; `claims.create`, `claims.get`, `claims.verify`; `unsubscribe_page.logo.upload`, `unsubscribe_page.logo.delete` (the domain's own logo on its unsubscribe pages) |
 | `brand` (`.logo`) | the team's brand defaults for the hosted unsubscribe pages: `get`, `update`; `logo.upload`, `logo.delete` |
 | `api_keys` | create, list, update, delete |
-| `contacts` (`.topics`, `.segments`, `.batch`, `.imports`) | create, list, get, update, delete, preferences_link; `segments.list`, `segments.add`, `segments.remove`; `batch.create`, `batch.get`, `batch.remove`; `imports.create` (a CSV upload), `imports.list`, `imports.get` |
-| `audiences.contacts` | contacts addressed through an audience |
+| `contacts` (`.topics`, `.segments`, `.batch`, `.imports`) | create, list, get, update, delete, preferences_link; `topics.list`, `topics.update`; `segments.list`, `segments.add`, `segments.remove`; `batch.create`, `batch.get`, `batch.remove`; `imports.create` (a CSV upload), `imports.list`, `imports.get` |
+| `audiences.contacts` | contacts addressed through an audience: create, get, update, delete |
 | `contact_properties`, `segments` (`.contacts`), `topics` | contact data and grouping |
 | `broadcasts` | create, list, get, update, delete, send, duplicate, cancel, recipients, clicked_links; `dormant_check` and `include_dormant` on create, update and get switch the check for contacts who stopped opening |
 | `templates` | create, list, get, update, delete, publish, duplicate |
 | `webhooks` (`.events`) | create, list, get, update, delete, rotate_signing_secret; `events.list`, `events.get`, `events.replay`, `events.attempts.list` |
 | `suppressions` (`.batch`), `unsubscribes` | suppression list (`batch.add` takes `emails` and `domains`, `batch.remove`; `list(kind="email" \| "domain" \| "all")`; an entry's `email` is `None` on a domain entry, and `removable` is `False` for a bounce or a complaint) and opt-outs (`unsubscribes.list`, `unsubscribes.create`) |
 | `verifications` | availability, estimate, create, list, get |
-| `usage`, `deliverability` | account usage (`emails.daily`, `emails.monthly`, `contacts`, `domains`, …) and sending health |
+| `usage`, `deliverability` | `usage.get()` is the account's usage (`emails.daily`, `emails.monthly`, `contacts`, `domains`, …) and `deliverability.get()` the sending health |
 | `deliverability.get()` | the team's standing, and each sending domain's own under `domains`; a paused domain answers 403 `domain_sending_paused`, a paused team 403 `sending_paused` |
 | `events` | custom events: create, list, get, update, remove, send |
 | `automations` (`.runs`) | create, list, get, update, remove, validate, duplicate, simulate, stop, metrics; `runs.list`, `runs.get`, `runs.cancel` |
 | `logs`, `oauth_grants` | request logs (`list`, `get`) and OAuth grants (`list`, `revoke`) |
 | `inboxes` (`.events`) | create, list, get, update, delete, send; `events.stream`, `events.stream_inbox` |
-| `inboxes.agent` (`get`, `update`), `.safety`, `.labels`, `.codes`, `.quarantine`, `.drafts` | inbox settings, labels, verification codes, held mail, drafts |
+| `inboxes.agent` (`get`, `update`), `.safety` (`get`, `update`), `.labels` (create, list, update, delete), `.codes` (`latest`), `.quarantine` (`list`, `release`), `.drafts` (create, list, get, update, delete, send, reject) | inbox settings, labels, verification codes, held mail, drafts |
 | `inboxes.threads` (`.labels`, `.emails`) | list, search, get, update, delete; thread labels; messages, reply and forward |
 | `agent` | signup, status, claim_email |
 
 Each method is named after its operation's `operationId` in the API document: `emails.receiving.attachments.list` is `client.emails.receiving.attachments.list`, with camelCase written in snake_case (`agent.claimEmail` is `client.agent.claim_email`, `oauthGrants.list` is `client.oauth_grants.list`).
 
-Path parameters are positional (`client.domains.get(domain_id)`), the request body is a `dict` (`client.domains.create({"name": "acme.dev"})`) and query parameters are keyword arguments (`client.emails.list(limit=50)`). A parameter named after a Python keyword takes a trailing underscore (`from_=`). An empty id raises `ValueError` before any request (the API answers `GET /emails/` with a 401 about the key, which sends you looking in the wrong place). Every method also takes `extra_headers=` and `timeout=`.
+Path parameters are positional (`client.domains.get(domain_id)`), the request body is a `dict` (`client.domains.create({"name": "acme.dev"})`) and query parameters are keyword arguments (`client.emails.list(limit=50)`). A parameter named after a Python keyword takes a trailing underscore (`from_=`). An empty id, `.` or `..` raises `ValueError` before any request (the API answers `GET /emails/` with a 401 about the key, which sends you looking in the wrong place). Every method also takes `extra_headers=` and `timeout=`.
 
 ## Importing contacts from a CSV
 
@@ -272,7 +272,8 @@ except BillionSendError as err:
 | 404 | `NotFoundError` |
 | 409 | `ConflictError` |
 | 429 | `RateLimitError` (`retry_after` in seconds) |
-| 5xx | `APIError` |
+| 5xx | `APIError` (`retry_after` is set when the answer has a `Retry-After`) |
+| any other 4xx | `BillionSendError` |
 | no answer, or one that cannot be read (a broken gzip body) | `APIConnectionError`, and `APITimeoutError` (a subclass) for timeouts; `status_code` and `request_id` are `None` |
 
 A header value the transport cannot send (a non-ASCII character or a control character, such as `Idempotency-Key: welcome/订单-1` or a line break inside a key) raises `BillionSendError` (`name` `"invalid_header"`, naming the header, never its value) before anything is sent, and is never retried. An answer that is not JSON keeps the same shape, with `name` set to `"application_error"`. A success with no body at all (a 204) returns `None`. `WebhookVerificationError` (`name` `"webhook_verification_error"`) is a `BillionSendError` too.
@@ -325,7 +326,7 @@ Whatever fails is what the SDK has to follow. CI runs `scripts/generate.py --che
 Publishing is manual; nothing is published on push.
 
 1. On PyPI, the owner of the `billionsend` project adds a Trusted Publisher (for the first version, a "pending publisher" under Account → Publishing, which reserves the name until the first upload): PyPI project name `billionsend`, owner `Billionsend`, repository `billionsend-python`, workflow `release.yml`, environment `pypi`. In this repository's GitHub settings, create the `pypi` environment (Settings → Environments); add required reviewers there to have each release approved before it uploads.
-2. Set `version` in `pyproject.toml`, turn the changelog's `Unreleased` heading into that version, commit, then tag and push: `git tag v0.1.0 && git push origin main v0.1.0`.
+2. Set `version` in `pyproject.toml`, turn the changelog's `Unreleased` heading into that version, commit, then tag and push: `git tag v<version> && git push origin main v<version>`.
 3. Actions → `release` → Run workflow, on the version tag. The workflow refuses a branch or a tag that differs from `pyproject.toml`, runs every check, builds the sdist and wheel, and uploads them with PyPI Trusted Publishing (no token stored).
 
 Without Trusted Publishing, the same release from a clean checkout of the tag is `uv build && uv publish` with an API token scoped to the `billionsend` project in `UV_PUBLISH_TOKEN`.

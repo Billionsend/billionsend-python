@@ -129,6 +129,8 @@ __all__ = [
     "GetDomainResponse",
     "GetDomainResponseCapabilities",
     "GetDomainResponseRecordsItem",
+    "GetDomainResponseSendingLimits",
+    "GetDomainResponseSendingLimitsHardIndicators",
     "GetDomainResponseUnsubscribePage",
     "GetEmailResponse",
     "GetLogResponse",
@@ -1293,6 +1295,33 @@ class GetDomainResponseRecordsItem(TypedDict):
     policy: NotRequired[Literal["none", "quarantine", "reject"]]
 
 
+class GetDomainResponseSendingLimitsHardIndicators(TypedDict):
+    delivery: Literal["ok", "warning", "paused"]
+    content_review: Literal["clear", "held"]
+    providers_in_backoff: int
+
+
+class GetDomainResponseSendingLimits(TypedDict):
+    """BillionSend extension, on GET /domains/{id} only: the broadcast limit this domain's
+    registrable name is under (only broadcasts are limited; API, SMTP and automation
+    mail never are). Read-only.
+    """
+
+    mode: Literal["warming", "limited", "unlimited", "exempt", "trusted"]
+    warmup_day: int
+    warmup_ends_on: str | None
+    window_started_at: str | None
+    cap: int | None
+    used: int | None
+    g: int
+    g_reasons: list[Literal["delivery_warning", "provider_backoff", "content_suspicious"]]
+    t: int | None
+    b: int | None
+    parked: int
+    next_window_at: str | None
+    hard_indicators: GetDomainResponseSendingLimitsHardIndicators
+
+
 class GetDomainResponse(TypedDict):
     id: str
     name: str
@@ -1316,6 +1345,7 @@ class GetDomainResponse(TypedDict):
     sending_mode_reason: NotRequired[Literal["plan", "platform"] | None]
     object: Literal["domain"]
     records: list[GetDomainResponseRecordsItem]
+    sending_limits: NotRequired[GetDomainResponseSendingLimits]
 
 
 class UpdateDomainRequestUnsubscribePage(TypedDict):
@@ -1671,6 +1701,7 @@ class BatchAddSuppressionsRequest(TypedDict):
     emails: NotRequired[list[str]]
     domains: NotRequired[list[str]]
     origin: NotRequired[Literal["bounce", "complaint", "manual"]]
+    note: NotRequired[str]
 
 
 class SuppressionIdResponse(TypedDict):
@@ -1709,6 +1740,7 @@ class CreateSuppressionRequest(TypedDict):
     email: NotRequired[str]
     domain: NotRequired[str]
     origin: NotRequired[Literal["bounce", "complaint", "manual"]]
+    note: NotRequired[str]
 
 
 class ListSuppressionsResponseDataItem(TypedDict):
@@ -1719,6 +1751,7 @@ class ListSuppressionsResponseDataItem(TypedDict):
     removable: bool
     origin: Literal["bounce", "complaint", "manual"]
     source_id: str | None
+    note: str | None
     created_at: str
 
 
@@ -1736,6 +1769,7 @@ class GetSuppressionResponse(TypedDict):
     removable: bool
     origin: Literal["bounce", "complaint", "manual"]
     source_id: str | None
+    note: str | None
     created_at: str
     object: Literal["suppression"]
 
