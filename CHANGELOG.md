@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.4.0 (2026-11-28)
+
+The OpenAPI snapshot follows the published document (193 operations, up from 186).
+
+- New resource `broadcast_groups` for one message sent from several of the team's sending domains, one broadcast per domain: `create`, `list` (and `list_all`), `get`, `update`, `remove`, `send` (the body is optional, as on `broadcasts.send`) and `cancel`. A group takes `domain_ids` (2 to 20 verified domains), `from_name` and `from_local_part` (each domain completes the address), `reassign_domain_ids` (domains left out of the send whose contacts move to one of `domain_ids`), `segment_id`, `topic_id`, the dormant-contact switches, and `send: True` with an optional `scheduled_at` to send at once; it answers `status`, `sent_count`, `total_count`, `finishes_at` and its `broadcasts`. A broadcast that belongs to a group answers `group_id`, and changing, sending or deleting it on its own is refused with 422 `grouped_broadcast`.
+- `automations.stop(id, {"cancel_runs": True})` also cancels the runs already going; without a body the runs finish, as before. The call can answer 400 for malformed JSON and 422 for a bad body now.
+- `topics.list` and `contacts.topics.list` are cursor lists now, newest first: they take `limit`, `after` and `before`, and `topics.list_all` and `contacts.topics.list_all` iterate them.
+- `broadcasts.create` and `broadcasts.update` accept `audience_id` as an alias of `segment_id` (both with different values answer 422); `broadcasts.get` and `broadcasts.list` answer it next to `segment_id`.
+- `emails.get` answers `topic_id` and `tags`; `emails.list` answers `message_id` and `topic_id` on every item. `emails.delete` answers `409 email_recently_sent` for an email that went out less than 7 days ago.
+- `domains.create` and `domains.claims.create` follow the regions the deployment serves now (`us-east-2`, `ap-southeast-1`, `eu-west-3`); `custom_return_path` is a label of at most 48 characters; `tls` is not supported (422). A domain's answer says its region is chosen when the domain is added.
+- `broadcasts.update`, `.send` and `.delete` answer 422 for a broadcast of a group.
+- Tests: every new method through the sync and the async client (request shape, optional bodies, cursors), the cursor-list count and the operation count (193) follow the snapshot.
+
 ## 0.3.1 (2026-11-26)
 
 The OpenAPI snapshot follows the published document (186 operations, as before).

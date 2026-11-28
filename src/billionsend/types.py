@@ -54,8 +54,10 @@ __all__ = [
     "BatchRemoveSuppressionsResponse",
     "BatchRemoveSuppressionsResponseNotRemovedItem",
     "Brand",
+    "BroadcastGroupIdResponse",
     "BroadcastIdResponse",
     "CancelAutomationRunResponse",
+    "CancelBroadcastGroupResponse",
     "CancelBroadcastResponse",
     "CancelEmailResponse",
     "ClaimDomainRequest",
@@ -73,6 +75,8 @@ __all__ = [
     "CreateAutomationRequest",
     "CreateAutomationRequestLayout",
     "CreateAutomationRequestLayoutNodesValue",
+    "CreateBroadcastGroupRequest",
+    "CreateBroadcastGroupResponse",
     "CreateBroadcastRequest",
     "CreateContactImportForm",
     "CreateContactImportResponse",
@@ -120,6 +124,8 @@ __all__ = [
     "GetAutomationResponseStepsItem",
     "GetAutomationRunResponse",
     "GetAutomationRunResponseStepsItem",
+    "GetBroadcastGroupResponse",
+    "GetBroadcastGroupResponseBroadcastsItem",
     "GetBroadcastResponse",
     "GetContactPropertyResponse",
     "GetContactResponse",
@@ -133,6 +139,7 @@ __all__ = [
     "GetDomainResponseSendingLimitsHardIndicators",
     "GetDomainResponseUnsubscribePage",
     "GetEmailResponse",
+    "GetEmailResponseTagsItem",
     "GetLogResponse",
     "GetReceivedAttachmentResponse",
     "GetReceivedAttachmentTextResponse",
@@ -185,6 +192,9 @@ __all__ = [
     "ListAutomationsResponseDataItem",
     "ListBroadcastClickedLinksResponse",
     "ListBroadcastClickedLinksResponseDataItem",
+    "ListBroadcastGroupsResponse",
+    "ListBroadcastGroupsResponseDataItem",
+    "ListBroadcastGroupsResponseDataItemBroadcastsItem",
     "ListBroadcastRecipientsResponse",
     "ListBroadcastRecipientsResponseDataItem",
     "ListBroadcastRecipientsResponseDataItemClickedLinksItem",
@@ -265,6 +275,7 @@ __all__ = [
     "ReleaseQuarantinedRequest",
     "RemoveApiKeyResponse",
     "RemoveAutomationResponse",
+    "RemoveBroadcastGroupResponse",
     "RemoveBroadcastResponse",
     "RemoveContactPropertyResponse",
     "RemoveContactResponse",
@@ -292,6 +303,7 @@ __all__ = [
     "SegmentFilter",
     "SegmentFilterConditionsItem",
     "SegmentResponse",
+    "SendBroadcastGroupResponse",
     "SendBroadcastRequest",
     "SendBroadcastResponse",
     "SendBroadcastResponseWarning",
@@ -318,6 +330,7 @@ __all__ = [
     "StartVerificationRequest",
     "StartVerificationResponse",
     "StartVerificationResponseRunsItem",
+    "StopAutomationRequest",
     "StopAutomationResponse",
     "SuppressionIdResponse",
     "TemplateIdResponse",
@@ -333,6 +346,7 @@ __all__ = [
     "UpdateAutomationRequestLayout",
     "UpdateAutomationRequestLayoutNodesValue",
     "UpdateBrandRequest",
+    "UpdateBroadcastGroupRequest",
     "UpdateBroadcastRequest",
     "UpdateContactPropertyRequest",
     "UpdateContactRequest",
@@ -746,7 +760,7 @@ class ListContactTopicsResponseDataItem(TypedDict):
 class ListContactTopicsResponse(TypedDict):
     object: Literal["list"]
     data: list[ListContactTopicsResponseDataItem]
-    has_more: Literal[False]
+    has_more: bool
 
 
 class UpdateContactTopicsRequestItem(TypedDict):
@@ -895,6 +909,7 @@ CreateBroadcastRequest = TypedDict(
     {
         "name": NotRequired[str],
         "segment_id": NotRequired[str],
+        "audience_id": NotRequired[str],
         "from": NotRequired[str],
         "subject": NotRequired[str],
         "html": NotRequired[str],
@@ -928,6 +943,7 @@ class ListBroadcastsResponseDataItem(TypedDict):
     id: str
     name: str | None
     segment_id: str | None
+    audience_id: str | None
     status: str
     created_at: str
     scheduled_at: str | None
@@ -960,6 +976,7 @@ GetBroadcastResponse = TypedDict(
         "id": str,
         "name": str | None,
         "segment_id": str | None,
+        "audience_id": str | None,
         "status": str,
         "created_at": str,
         "scheduled_at": str | None,
@@ -977,6 +994,7 @@ GetBroadcastResponse = TypedDict(
         "sent_count": int | None,
         "finishes_at": str | None,
         "object": Literal["broadcast"],
+        "group_id": str | None,
         "from": str,
         "subject": str,
         "reply_to": list[str] | None,
@@ -996,6 +1014,7 @@ UpdateBroadcastRequest = TypedDict(
     {
         "name": NotRequired[str],
         "segment_id": NotRequired[str],
+        "audience_id": NotRequired[str],
         "from": NotRequired[str],
         "subject": NotRequired[str],
         "html": NotRequired[str],
@@ -1067,6 +1086,173 @@ class CancelBroadcastResponse(TypedDict):
     canceled_remaining: int
 
 
+class CreateBroadcastGroupRequest(TypedDict):
+    name: str
+    domain_ids: list[str]
+    reassign_domain_ids: NotRequired[list[str]]
+    from_name: NotRequired[str]
+    from_local_part: str
+    subject: str
+    html: NotRequired[str]
+    text: NotRequired[str]
+    preview_text: NotRequired[str]
+    reply_to: NotRequired[str | list[str]]
+    segment_id: NotRequired[str]
+    topic_id: NotRequired[str | None]
+    dormant_check: NotRequired[bool]
+    include_dormant: NotRequired[bool]
+    send: NotRequired[bool]
+    scheduled_at: NotRequired[str]
+
+
+class CreateBroadcastGroupResponse(TypedDict):
+    id: str
+    broadcast_ids: list[str]
+    finishes_at: NotRequired[str | None]
+
+
+ListBroadcastGroupsResponseDataItemBroadcastsItem = TypedDict(
+    "ListBroadcastGroupsResponseDataItemBroadcastsItem",
+    {
+        "id": str,
+        "domain_id": str | None,
+        "from": str,
+        "status": Literal["draft", "queued", "sent", "canceled", "failed"],
+        "failure_reason": Literal[
+            "domain_missing",
+            "sender_domain_mismatch",
+            "topic_other_domain",
+            "segment_other_domain",
+            "domain_unverified",
+            "retries_exhausted",
+        ]
+        | None,
+        "sent_count": int,
+        "total_count": int | None,
+        "sent_at": str | None,
+        "finishes_at": str | None,
+    },
+)
+
+
+class ListBroadcastGroupsResponseDataItem(TypedDict):
+    id: str
+    name: str
+    status: Literal["draft", "queued", "sent", "canceled", "failed"]
+    domain_ids: list[str]
+    reassign_domain_ids: list[str]
+    subject: str
+    segment_id: str | None
+    topic_id: str | None
+    domain_weights: dict[str, float] | None
+    other_brand_count: int | None
+    created_at: str
+    updated_at: str
+    scheduled_at: str | None
+    sent_count: int
+    total_count: int | None
+    finishes_at: str | None
+    broadcasts: list[ListBroadcastGroupsResponseDataItemBroadcastsItem]
+
+
+class ListBroadcastGroupsResponse(TypedDict):
+    object: Literal["list"]
+    data: list[ListBroadcastGroupsResponseDataItem]
+    has_more: bool
+
+
+GetBroadcastGroupResponseBroadcastsItem = TypedDict(
+    "GetBroadcastGroupResponseBroadcastsItem",
+    {
+        "id": str,
+        "domain_id": str | None,
+        "from": str,
+        "status": Literal["draft", "queued", "sent", "canceled", "failed"],
+        "failure_reason": Literal[
+            "domain_missing",
+            "sender_domain_mismatch",
+            "topic_other_domain",
+            "segment_other_domain",
+            "domain_unverified",
+            "retries_exhausted",
+        ]
+        | None,
+        "sent_count": int,
+        "total_count": int | None,
+        "sent_at": str | None,
+        "finishes_at": str | None,
+    },
+)
+
+
+class GetBroadcastGroupResponse(TypedDict):
+    id: str
+    name: str
+    status: Literal["draft", "queued", "sent", "canceled", "failed"]
+    domain_ids: list[str]
+    reassign_domain_ids: list[str]
+    subject: str
+    segment_id: str | None
+    topic_id: str | None
+    domain_weights: dict[str, float] | None
+    other_brand_count: int | None
+    created_at: str
+    updated_at: str
+    scheduled_at: str | None
+    sent_count: int
+    total_count: int | None
+    finishes_at: str | None
+    broadcasts: list[GetBroadcastGroupResponseBroadcastsItem]
+    object: Literal["broadcast_group"]
+    from_name: str | None
+    from_local_part: str
+    reply_to: list[str] | None
+    preview_text: str | None
+    html: str | None
+    text: str | None
+    dormant_check: bool
+    include_dormant: bool
+
+
+class UpdateBroadcastGroupRequest(TypedDict):
+    name: NotRequired[str]
+    domain_ids: NotRequired[list[str]]
+    reassign_domain_ids: NotRequired[list[str]]
+    from_name: NotRequired[str | None]
+    from_local_part: NotRequired[str]
+    subject: NotRequired[str]
+    html: NotRequired[str]
+    text: NotRequired[str]
+    preview_text: NotRequired[str]
+    reply_to: NotRequired[str | list[str]]
+    segment_id: NotRequired[str | None]
+    topic_id: NotRequired[str | None]
+    dormant_check: NotRequired[bool]
+    include_dormant: NotRequired[bool]
+
+
+class BroadcastGroupIdResponse(TypedDict):
+    id: str
+
+
+class RemoveBroadcastGroupResponse(TypedDict):
+    object: Literal["broadcast_group"]
+    id: str
+    deleted: Literal[True]
+
+
+class SendBroadcastGroupResponse(TypedDict):
+    id: str
+    broadcast_ids: list[str]
+    finishes_at: str | None
+
+
+class CancelBroadcastGroupResponse(TypedDict):
+    object: Literal["broadcast_group"]
+    id: str
+    canceled_remaining: int
+
+
 class CreateTopicRequest(TypedDict):
     name: str
     description: NotRequired[str]
@@ -1098,7 +1284,7 @@ class ListTopicsResponseDataItem(TypedDict):
 class ListTopicsResponse(TypedDict):
     object: Literal["list"]
     data: list[ListTopicsResponseDataItem]
-    has_more: Literal[False]
+    has_more: bool
 
 
 class UpdateTopicRequest(TypedDict):
@@ -1127,13 +1313,14 @@ class CreateDomainRequestCapabilities(TypedDict):
 
 class CreateDomainRequest(TypedDict):
     name: str
-    region: NotRequired[Literal["us-east-1", "eu-west-1", "sa-east-1", "ap-northeast-1"]]
+    region: NotRequired[Literal["us-east-2", "ap-southeast-1", "eu-west-3"]]
     custom_return_path: NotRequired[str]
     open_tracking: NotRequired[bool]
     click_tracking: NotRequired[bool]
     tracking_subdomain: NotRequired[str]
     unsubscribe_subdomain: NotRequired[str]
     capabilities: NotRequired[CreateDomainRequestCapabilities]
+    tls: NotRequired[Any]
 
 
 class CreateDomainResponseUnsubscribePage(TypedDict):
@@ -1409,7 +1596,7 @@ class RemoveLogoResponse(TypedDict):
 
 class ClaimDomainRequest(TypedDict):
     name: str
-    region: NotRequired[Literal["us-east-1", "eu-west-1", "sa-east-1", "ap-northeast-1"]]
+    region: NotRequired[Literal["us-east-2", "ap-southeast-1", "eu-west-3"]]
     custom_return_path: NotRequired[str]
     open_tracking: NotRequired[bool]
     click_tracking: NotRequired[bool]
@@ -2102,6 +2289,10 @@ class RemoveAutomationResponse(TypedDict):
     object: Literal["automation"]
     id: str
     deleted: Literal[True]
+
+
+class StopAutomationRequest(TypedDict):
+    cancel_runs: NotRequired[bool]
 
 
 class StopAutomationResponse(TypedDict):
@@ -3420,6 +3611,8 @@ ListEmailsResponseDataItem = TypedDict(
         "created_at": str,
         "scheduled_at": str | None,
         "last_event": str,
+        "message_id": str,
+        "topic_id": str | None,
     },
 )
 
@@ -3461,6 +3654,11 @@ class UpdateEmailResponse(TypedDict):
     id: str
 
 
+class GetEmailResponseTagsItem(TypedDict):
+    name: str
+    value: str
+
+
 GetEmailResponse = TypedDict(
     "GetEmailResponse",
     {
@@ -3474,10 +3672,12 @@ GetEmailResponse = TypedDict(
         "created_at": str,
         "scheduled_at": str | None,
         "last_event": str,
+        "message_id": str,
+        "topic_id": str | None,
         "object": Literal["email"],
         "html": str | None,
         "text": str | None,
-        "message_id": str,
+        "tags": NotRequired[list[GetEmailResponseTagsItem]],
         "score": float | None,
     },
 )

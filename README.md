@@ -5,7 +5,7 @@ The official Python client for the [BillionSend](https://billionsend.com) API: s
 - Sync (`BillionSend`) and async (`AsyncBillionSend`) clients with the same resources and methods.
 - Fully typed: request parameters and responses are `TypedDict`s, checked by mypy in strict mode.
 - One dependency: [`httpx`](https://www.python-httpx.org/).
-- A method for every one of the API's 186 operations (the built-in snapshot of the API document has exactly the operations the published document has), sends that never go out twice, retries, auto-paging iterators, live event streams that resume where they stopped, and webhook signature verification.
+- A method for every one of the API's 193 operations (the built-in snapshot of the API document has exactly the operations the published document has), sends that never go out twice, retries, auto-paging iterators, live event streams that resume where they stopped, and webhook signature verification.
 
 Documentation: https://billionsend.com/docs (Python guide: https://billionsend.com/docs/sdks/python).
 
@@ -167,7 +167,8 @@ Deliveries come from the fixed IP `51.161.117.92` with the header `User-Agent: B
 | `api_keys` | create, list, update, delete |
 | `contacts` (`.topics`, `.segments`, `.batch`, `.imports`) | create, list, get, update, delete, preferences_link; `topics.list`, `topics.update`; `segments.list`, `segments.add`, `segments.remove`; `batch.create`, `batch.get`, `batch.remove`; `imports.create` (a CSV upload), `imports.list`, `imports.get` |
 | `audiences.contacts` | contacts addressed through an audience: create, get, update, delete |
-| `contact_properties`, `segments` (`.contacts`), `topics` | contact data and grouping |
+| `contact_properties`, `segments` (`.contacts`), `topics` | contact data and grouping; `topics.list` and `contacts.topics.list` are cursor lists (`limit`, `after`, `before`) with `list_all` |
+| `broadcast_groups` | create, list, get, update, remove, send, cancel: one message sent from several of the team's sending domains, one broadcast per domain |
 | `broadcasts` | create, list, get, update, delete, send, duplicate, cancel, recipients, clicked_links; `dormant_check` and `include_dormant` on create, update and get switch the check for contacts who stopped opening |
 | `templates` | create, list, get, update, delete, publish, duplicate |
 | `webhooks` (`.events`) | create, list, get, update, delete, rotate_signing_secret; `events.list`, `events.get`, `events.replay`, `events.attempts.list` |
@@ -176,7 +177,7 @@ Deliveries come from the fixed IP `51.161.117.92` with the header `User-Agent: B
 | `usage`, `deliverability` | `usage.get()` is the account's usage (`emails.daily`, `emails.monthly`, `contacts`, `domains`, …) and `deliverability.get()` the sending health |
 | `deliverability.get()` | the team's standing, and each sending domain's own under `domains`; a paused domain answers 403 `domain_sending_paused`, a paused team 403 `sending_paused` |
 | `events` | custom events: create, list, get, update, remove, send |
-| `automations` (`.runs`) | create, list, get, update, remove, validate, duplicate, simulate, stop, metrics; `runs.list`, `runs.get`, `runs.cancel` |
+| `automations` (`.runs`) | create, list, get, update, remove, validate, duplicate, simulate, stop (`{"cancel_runs": True}` also cancels the runs already going), metrics; `runs.list`, `runs.get`, `runs.cancel` |
 | `logs`, `oauth_grants` | request logs (`list`, `get`) and OAuth grants (`list`, `revoke`) |
 | `inboxes` (`.events`) | create, list, get, update, delete, send; `events.stream`, `events.stream_inbox` |
 | `inboxes.agent` (`get`, `update`), `.safety` (`get`, `update`), `.labels` (create, list, update, delete), `.codes` (`latest`), `.quarantine` (`list`, `release`), `.drafts` (create, list, get, update, delete, send, reject) | inbox settings, labels, verification codes, held mail, drafts |

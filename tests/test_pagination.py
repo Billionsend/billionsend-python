@@ -100,7 +100,9 @@ def test_every_cursor_list_has_a_paginator() -> None:
     assert callable(client.inboxes.threads.search_all)
     assert callable(client.emails.receiving.list_all)
     assert callable(client.inboxes.drafts.list_all)
-    assert not hasattr(client.topics, "list_all")  # not a cursor list in the contract
+    assert callable(client.topics.list_all)
+    assert callable(client.contacts.topics.list_all)
+    assert callable(client.broadcast_groups.list_all)
 
 
 async def test_async_pages(async_client: AsyncBillionSend, mock: ContractMock) -> None:

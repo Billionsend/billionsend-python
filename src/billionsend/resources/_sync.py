@@ -34,8 +34,10 @@ from ..types import (
     BatchRemoveSuppressionsRequest,
     BatchRemoveSuppressionsResponse,
     Brand,
+    BroadcastGroupIdResponse,
     BroadcastIdResponse,
     CancelAutomationRunResponse,
+    CancelBroadcastGroupResponse,
     CancelBroadcastResponse,
     CancelEmailResponse,
     ClaimDomainRequest,
@@ -48,6 +50,8 @@ from ..types import (
     CreateApiKeyRequest,
     CreateApiKeyResponse,
     CreateAutomationRequest,
+    CreateBroadcastGroupRequest,
+    CreateBroadcastGroupResponse,
     CreateBroadcastRequest,
     CreateContactImportForm,
     CreateContactImportResponse,
@@ -79,6 +83,7 @@ from ..types import (
     Event,
     GetAutomationResponse,
     GetAutomationRunResponse,
+    GetBroadcastGroupResponse,
     GetBroadcastResponse,
     GetContactPropertyResponse,
     GetContactResponse,
@@ -117,6 +122,8 @@ from ..types import (
     ListAutomationsResponseDataItem,
     ListBroadcastClickedLinksResponse,
     ListBroadcastClickedLinksResponseDataItem,
+    ListBroadcastGroupsResponse,
+    ListBroadcastGroupsResponseDataItem,
     ListBroadcastRecipientsResponse,
     ListBroadcastRecipientsResponseDataItem,
     ListBroadcastsResponse,
@@ -127,6 +134,7 @@ from ..types import (
     ListContactsResponse,
     ListContactsResponseDataItem,
     ListContactTopicsResponse,
+    ListContactTopicsResponseDataItem,
     ListDomainsResponse,
     ListDomainsResponseDataItem,
     ListEmailsResponse,
@@ -159,6 +167,7 @@ from ..types import (
     ListTemplatesResponse,
     ListTemplatesResponseDataItem,
     ListTopicsResponse,
+    ListTopicsResponseDataItem,
     ListUnsubscribesResponse,
     ListUnsubscribesResponseDataItem,
     ListVerificationsResponse,
@@ -177,6 +186,7 @@ from ..types import (
     ReleaseQuarantinedRequest,
     RemoveApiKeyResponse,
     RemoveAutomationResponse,
+    RemoveBroadcastGroupResponse,
     RemoveBroadcastResponse,
     RemoveContactPropertyResponse,
     RemoveContactResponse,
@@ -200,6 +210,7 @@ from ..types import (
     SearchInboxThreadsResponse,
     SearchInboxThreadsResponseDataItem,
     SegmentResponse,
+    SendBroadcastGroupResponse,
     SendBroadcastRequest,
     SendBroadcastResponse,
     SendEmailRequest,
@@ -214,6 +225,7 @@ from ..types import (
     SimulateAutomationResponse,
     StartVerificationRequest,
     StartVerificationResponse,
+    StopAutomationRequest,
     StopAutomationResponse,
     SuppressionIdResponse,
     TemplateIdResponse,
@@ -225,6 +237,7 @@ from ..types import (
     UpdateApiKeyResponse,
     UpdateAutomationRequest,
     UpdateBrandRequest,
+    UpdateBroadcastGroupRequest,
     UpdateBroadcastRequest,
     UpdateContactPropertyRequest,
     UpdateContactRequest,
@@ -1336,20 +1349,59 @@ class ContactsTopicsResource:
         self,
         id: str,
         *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> ListContactTopicsResponse:
         """List contact topics.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
 
         ``GET /contacts/{id}/topics``
         """
         response = self._client.request(
             "GET",
             f"/contacts/{encode_path(id)}/topics",
+            query={"limit": limit, "after": after, "before": before},
             extra_headers=extra_headers,
             timeout=timeout,
         )
         return cast("ListContactTopicsResponse", response)
+
+    def list_all(
+        self,
+        id: str,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListContactTopicsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                id,
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListContactTopicsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
 
     def update(
         self,
@@ -3503,20 +3555,24 @@ class AutomationsResource:
     def stop(
         self,
         id: str,
+        params: StopAutomationRequest | None = None,
         *,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> StopAutomationResponse:
         """Stop an automation.
 
-        Sets the automation to disabled: no new runs start; runs already going finish.
-        Stopping a stopped automation answers the same.
+        Sets the automation to disabled: no new runs start; runs already going finish,
+        unless cancel_runs cancels them. Stopping a stopped automation answers the same,
+        and with cancel_runs cancels what is still going, so a call cut short can be
+        repeated.
 
         ``POST /automations/{id}/stop``
         """
         response = self._client.request(
             "POST",
             f"/automations/{encode_path(id)}/stop",
+            body=params,
             extra_headers=extra_headers,
             timeout=timeout,
         )
@@ -3663,6 +3719,200 @@ class BrandResource:
             timeout=timeout,
         )
         return cast("Brand", response)
+
+
+class BroadcastGroupsResource:
+    """Operations on broadcast groups."""
+
+    def __init__(self, client: SyncAPIClient) -> None:
+        self._client = client
+
+    def create(
+        self,
+        params: CreateBroadcastGroupRequest,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> CreateBroadcastGroupResponse:
+        """Create a broadcast group.
+
+        BillionSend extension: one send from several sending domains. The group holds a
+        broadcast per domain, all with the same content, from the same name and local
+        part, to the same audience; each contact is mailed from one of the domains and
+        keeps it for later sends.
+
+        ``POST /broadcast-groups``
+        """
+        response = self._client.request(
+            "POST",
+            "/broadcast-groups",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("CreateBroadcastGroupResponse", response)
+
+    def list(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> ListBroadcastGroupsResponse:
+        """List broadcast groups.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
+
+        ``GET /broadcast-groups``
+        """
+        response = self._client.request(
+            "GET",
+            "/broadcast-groups",
+            query={"limit": limit, "after": after, "before": before},
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("ListBroadcastGroupsResponse", response)
+
+    def list_all(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListBroadcastGroupsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListBroadcastGroupsResponseDataItem]",
+            paginate(fetch, after=after, before=before),
+        )
+
+    def get(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> GetBroadcastGroupResponse:
+        """Retrieve a broadcast group.
+
+        ``GET /broadcast-groups/{id}``
+        """
+        response = self._client.request(
+            "GET",
+            f"/broadcast-groups/{encode_path(id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("GetBroadcastGroupResponse", response)
+
+    def update(
+        self,
+        id: str,
+        params: UpdateBroadcastGroupRequest | None = None,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> BroadcastGroupIdResponse:
+        """Update a broadcast group.
+
+        Only while all its broadcasts are drafts. Its broadcasts are rewritten: one kept
+        keeps its id, a new domain gets one, a removed domain's is deleted.
+
+        ``PATCH /broadcast-groups/{id}``
+        """
+        response = self._client.request(
+            "PATCH",
+            f"/broadcast-groups/{encode_path(id)}",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("BroadcastGroupIdResponse", response)
+
+    def remove(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> RemoveBroadcastGroupResponse:
+        """Delete a broadcast group.
+
+        Only while all its broadcasts are drafts; they are deleted with it.
+
+        ``DELETE /broadcast-groups/{id}``
+        """
+        response = self._client.request(
+            "DELETE",
+            f"/broadcast-groups/{encode_path(id)}",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("RemoveBroadcastGroupResponse", response)
+
+    def send(
+        self,
+        id: str,
+        params: SendBroadcastRequest | None = None,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> SendBroadcastGroupResponse:
+        """Send a broadcast group.
+
+        Every broadcast of the group passes the checks a broadcast's send passes, and
+        the capacity plan; all are then scheduled together, or none is.
+
+        ``POST /broadcast-groups/{id}/send``
+        """
+        response = self._client.request(
+            "POST",
+            f"/broadcast-groups/{encode_path(id)}/send",
+            body=params,
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("SendBroadcastGroupResponse", response)
+
+    def cancel(
+        self,
+        id: str,
+        *,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> CancelBroadcastGroupResponse:
+        """Cancel a broadcast group.
+
+        ``POST /broadcast-groups/{id}/cancel``
+        """
+        response = self._client.request(
+            "POST",
+            f"/broadcast-groups/{encode_path(id)}/cancel",
+            extra_headers=extra_headers,
+            timeout=timeout,
+        )
+        return cast("CancelBroadcastGroupResponse", response)
 
 
 class BroadcastsResource:
@@ -4727,6 +4977,13 @@ class EmailsResource:
         timeout: float | httpx.Timeout | None = None,
     ) -> RemoveEmailResponse:
         """Delete an email.
+
+        Deletes the email with its events, stored content and share links; an email that
+        has not gone out also gives its volume back. An email that went out less than 7
+        days ago answers `409 email_recently_sent`, because bounce and complaint reports
+        still arrive for it; the days count from the moment it was handed over for
+        sending, whatever came of it, and the message names the earliest time it can be
+        deleted. BillionSend extension.
 
         ``DELETE /emails/{id}``
         """
@@ -5855,20 +6112,56 @@ class TopicsResource:
     def list(
         self,
         *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
         extra_headers: Mapping[str, str] | None = None,
         timeout: float | httpx.Timeout | None = None,
     ) -> ListTopicsResponse:
         """List topics.
+
+        Newest first, with cursor pagination: `after` takes the last id of a page and
+        pages toward older items, `before` takes the first id and pages back toward
+        newer ones.
 
         ``GET /topics``
         """
         response = self._client.request(
             "GET",
             "/topics",
+            query={"limit": limit, "after": after, "before": before},
             extra_headers=extra_headers,
             timeout=timeout,
         )
         return cast("ListTopicsResponse", response)
+
+    def list_all(
+        self,
+        *,
+        limit: int | None = None,
+        after: str | None = None,
+        before: str | None = None,
+        extra_headers: Mapping[str, str] | None = None,
+        timeout: float | httpx.Timeout | None = None,
+    ) -> Iterator[ListTopicsResponseDataItem]:
+        """Iterate over every item of :meth:`list`, fetching pages as needed.
+
+        Walks in the list's own order, from ``after`` (or the first page) on; pass
+        ``before`` instead to walk the other way.
+        """
+
+        def fetch(after_: str | None, before_: str | None) -> object:
+            return self.list(
+                limit=limit,
+                after=after_,
+                before=before_,
+                extra_headers=extra_headers,
+                timeout=timeout,
+            )
+
+        return cast(
+            "Iterator[ListTopicsResponseDataItem]", paginate(fetch, after=after, before=before)
+        )
 
     def get(
         self,
@@ -6369,6 +6662,7 @@ __all__ = [
     "AutomationsRunsResource",
     "BrandResource",
     "BrandLogoResource",
+    "BroadcastGroupsResource",
     "BroadcastsResource",
     "ContactPropertiesResource",
     "ContactsResource",

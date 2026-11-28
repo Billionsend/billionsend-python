@@ -147,6 +147,13 @@ CALLS: dict[tuple[str, str], Call] = {
     ("POST", "/broadcasts/{id}/send"): lambda c, b: c.broadcasts.send(ID, b),
     ("POST", "/broadcasts/{id}/duplicate"): lambda c, b: c.broadcasts.duplicate(ID),
     ("POST", "/broadcasts/{id}/cancel"): lambda c, b: c.broadcasts.cancel(ID),
+    ("POST", "/broadcast-groups"): lambda c, b: c.broadcast_groups.create(b),
+    ("GET", "/broadcast-groups"): lambda c, b: c.broadcast_groups.list(limit=5),
+    ("GET", "/broadcast-groups/{id}"): lambda c, b: c.broadcast_groups.get(ID),
+    ("PATCH", "/broadcast-groups/{id}"): lambda c, b: c.broadcast_groups.update(ID, b),
+    ("DELETE", "/broadcast-groups/{id}"): lambda c, b: c.broadcast_groups.remove(ID),
+    ("POST", "/broadcast-groups/{id}/send"): lambda c, b: c.broadcast_groups.send(ID, b),
+    ("POST", "/broadcast-groups/{id}/cancel"): lambda c, b: c.broadcast_groups.cancel(ID),
     ("GET", "/broadcasts/{id}/recipients"): lambda c, b: c.broadcasts.recipients(ID, type="sent"),
     ("GET", "/broadcasts/{id}/clicked-links"): lambda c, b: c.broadcasts.clicked_links(ID),
     # Templates
@@ -333,7 +340,7 @@ def body_for(key: tuple[str, str]) -> Any:
 
 
 def test_table_matches_the_contract() -> None:
-    assert len(OPERATION_KEYS) == 186
+    assert len(OPERATION_KEYS) == 193
     assert set(CALLS) == OPERATION_KEYS
 
 
@@ -418,7 +425,7 @@ def test_sync_and_async_have_the_same_surface() -> None:
         async_methods |= _public_methods(getattr(async_, name), name)
     assert sync_methods == async_methods
     operations = {m for m in sync_methods if not m.endswith("_all")}
-    assert len(operations) == len(OPERATION_KEYS) == 186
+    assert len(operations) == len(OPERATION_KEYS) == 193
 
 
 def test_idempotency_key_where_the_contract_declares_it() -> None:
@@ -478,4 +485,4 @@ def test_every_cursor_list_has_an_iterator() -> None:
                 assert callable(getattr(method.__self__, method.__name__ + "_all", None)), op[
                     "operationId"
                 ]
-    assert len(lists) == 33
+    assert len(lists) == 36

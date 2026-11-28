@@ -22,6 +22,7 @@ from .resources import (
     AsyncAudiencesResource,
     AsyncAutomationsResource,
     AsyncBrandResource,
+    AsyncBroadcastGroupsResource,
     AsyncBroadcastsResource,
     AsyncContactPropertiesResource,
     AsyncContactsResource,
@@ -43,6 +44,7 @@ from .resources import (
     AudiencesResource,
     AutomationsResource,
     BrandResource,
+    BroadcastGroupsResource,
     BroadcastsResource,
     ContactPropertiesResource,
     ContactsResource,
@@ -90,6 +92,7 @@ class BillionSend(SyncAPIClient):
     segments: SegmentsResource
     topics: TopicsResource
     broadcasts: BroadcastsResource
+    broadcast_groups: BroadcastGroupsResource
     templates: TemplatesResource
     webhooks: WebhooksResource
     suppressions: SuppressionsResource
@@ -132,6 +135,7 @@ class BillionSend(SyncAPIClient):
         self.segments = SegmentsResource(self)
         self.topics = TopicsResource(self)
         self.broadcasts = BroadcastsResource(self)
+        self.broadcast_groups = BroadcastGroupsResource(self)
         self.templates = TemplatesResource(self)
         self.webhooks = WebhooksResource(self)
         self.suppressions = SuppressionsResource(self)
@@ -173,6 +177,7 @@ class AsyncBillionSend(AsyncAPIClient):
     segments: AsyncSegmentsResource
     topics: AsyncTopicsResource
     broadcasts: AsyncBroadcastsResource
+    broadcast_groups: AsyncBroadcastGroupsResource
     templates: AsyncTemplatesResource
     webhooks: AsyncWebhooksResource
     suppressions: AsyncSuppressionsResource
@@ -215,6 +220,7 @@ class AsyncBillionSend(AsyncAPIClient):
         self.segments = AsyncSegmentsResource(self)
         self.topics = AsyncTopicsResource(self)
         self.broadcasts = AsyncBroadcastsResource(self)
+        self.broadcast_groups = AsyncBroadcastGroupsResource(self)
         self.templates = AsyncTemplatesResource(self)
         self.webhooks = AsyncWebhooksResource(self)
         self.suppressions = AsyncSuppressionsResource(self)

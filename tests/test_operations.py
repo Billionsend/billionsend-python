@@ -407,7 +407,7 @@ LISTS = [s for s in SPECS if s.cursor_list]
 
 
 def test_the_cursor_lists_are_the_ones_the_contract_declares() -> None:
-    assert len(LISTS) == 33
+    assert len(LISTS) == 36
 
 
 def _page(spec: Spec, ids: list[str], has_more: bool) -> dict[str, Any]:
